@@ -1,0 +1,22 @@
+.idea
+.venv
+.claude
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.db
+
+# Node
+node_modules/
+
+# Uploads
+server/uploads/
+
+# Env
+.env
+.env.local

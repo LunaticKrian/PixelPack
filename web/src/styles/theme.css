@@ -1,0 +1,50 @@
+:root {
+  --pixel-primary: #3CBBB1;
+  --pixel-accent: #FF6B6B;
+  --pixel-warning: #FFD93D;
+  --pixel-success: #6BCB77;
+  --pixel-info: #4ECDC4;
+
+  --pixel-bg: #1A1A2E;
+  --pixel-bg-secondary: #16213E;
+  --pixel-card-bg: #252540;
+  --pixel-border: #4A4A6A;
+  --pixel-text: #E0E0E0;
+  --pixel-text-secondary: #A0A0B0;
+  --pixel-shadow: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] {
+  --pixel-bg: #F0F0E8;
+  --pixel-bg-secondary: #E0E0D8;
+  --pixel-card-bg: #E8E8D8;
+  --pixel-border: #C0C0A8;
+  --pixel-text: #2C2C2C;
+  --pixel-text-secondary: #5A5A5A;
+  --pixel-shadow: rgba(0, 0, 0, 0.15);
+}
+
+.pixel-border {
+  border: 3px solid var(--pixel-border);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
+}
+
+.pixel-shadow {
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--pixel-bg);
+  border-left: 2px solid var(--pixel-border);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pixel-border);
+  border: 2px solid var(--pixel-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pixel-primary);
+}

@@ -1,0 +1,41 @@
+@import 'nes.css/css/nes.min.css';
+
+.nes-container {
+  background-color: var(--pixel-card-bg) !important;
+  border-color: var(--pixel-border) !important;
+  color: var(--pixel-text) !important;
+}
+
+.nes-container.is-dark {
+  background-color: var(--pixel-card-bg);
+  color: var(--pixel-text);
+}
+
+.nes-btn {
+  font-family: var(--font-pixel);
+  image-rendering: pixelated;
+}
+
+.nes-btn.is-primary {
+  background-color: var(--pixel-primary);
+}
+
+.nes-btn.is-warning {
+  background-color: var(--pixel-warning);
+}
+
+.nes-btn.is-error {
+  background-color: var(--pixel-accent);
+}
+
+.nes-btn.is-success {
+  background-color: var(--pixel-success);
+}
+
+.nes-input,
+.nes-textarea {
+  background-color: var(--pixel-bg) !important;
+  border-color: var(--pixel-border) !important;
+  color: var(--pixel-text) !important;
+  font-family: var(--font-pixel) !important;
+}

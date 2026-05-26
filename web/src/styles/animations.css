@@ -1,0 +1,48 @@
+@keyframes pixel-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes pixel-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pixel-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes pixel-press {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(2px); }
+}
+
+@keyframes pixel-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-blink {
+  animation: pixel-blink 1s step-end infinite;
+}
+
+.animate-fade-in {
+  animation: pixel-fade-in 0.3s steps(4);
+}
+
+.animate-slide-in {
+  animation: pixel-slide-in 0.3s steps(4);
+}
+
+.animate-press:active {
+  animation: pixel-press 0.1s steps(2) forwards;
+}
+
+.pixel-loading {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--pixel-border);
+  border-top-color: var(--pixel-primary);
+  animation: pixel-spin 0.8s steps(8) infinite;
+}

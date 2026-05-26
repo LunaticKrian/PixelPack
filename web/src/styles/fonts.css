@@ -1,0 +1,33 @@
+@font-face {
+  font-family: 'Ark Pixel';
+  src: url('/fonts/ark-pixel-16px-proportional-zh_cn.ttf.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Ark Pixel';
+  src: url('/fonts/ark-pixel-16px-proportional-latin.ttf.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-024F;
+}
+
+:root {
+  --font-pixel: 'Ark Pixel', 'Press Start 2P', monospace;
+  --font-pixel-en: 'Press Start 2P', monospace;
+  --font-pixel-num: 'VT323', 'Press Start 2P', monospace;
+}
+
+body {
+  font-family: var(--font-pixel);
+  background-color: var(--pixel-bg);
+  color: var(--pixel-text);
+  image-rendering: pixelated;
+}
+
+img {
+  image-rendering: pixelated;
+}
