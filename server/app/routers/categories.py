@@ -16,7 +16,7 @@ from app.utils.deps import get_current_user
 router = APIRouter(prefix="/api/categories", tags=["categories"])
 
 
-@router.get("/", response_model=list[CategoryResponse])
+@router.get("", response_model=list[CategoryResponse])
 async def get_categories(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -25,7 +25,7 @@ async def get_categories(
     return cats
 
 
-@router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_category(
     data: CategoryCreate,
     current_user: User = Depends(get_current_user),

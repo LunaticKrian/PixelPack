@@ -72,7 +72,7 @@ def _item_to_response(item) -> ItemResponse:
 
 
 # ── Items CRUD ─────────────────────────────────────────────────────────
-@router.get("/", response_model=ItemListResponse)
+@router.get("", response_model=ItemListResponse)
 async def get_items(
     keyword: str | None = None,
     category_id: int | None = None,
@@ -107,7 +107,7 @@ async def get_items(
     )
 
 
-@router.post("/", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_item(
     data: ItemCreate,
     current_user: User = Depends(get_current_user),

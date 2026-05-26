@@ -16,7 +16,7 @@ from app.utils.deps import get_current_user
 router = APIRouter(prefix="/api/tags", tags=["tags"])
 
 
-@router.get("/", response_model=list[TagResponse])
+@router.get("", response_model=list[TagResponse])
 async def get_tags(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -25,7 +25,7 @@ async def get_tags(
     return tags
 
 
-@router.post("/", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_tag(
     data: TagCreate,
     current_user: User = Depends(get_current_user),

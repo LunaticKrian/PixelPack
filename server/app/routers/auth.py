@@ -25,7 +25,7 @@ from app.utils.security import (
     verify_token,
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/api/auth")
 
 
 def _build_tokens(user_id: int) -> TokenResponse:

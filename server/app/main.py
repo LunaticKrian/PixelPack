@@ -14,7 +14,7 @@ from app.models import (  # noqa: F401 – ensure tables are created
     User,
     item_tags,
 )
-from app.routers import auth, categories, items, tags
+from app.routers import auth, categories, items, stats, tags
 
 
 @asynccontextmanager
@@ -30,6 +30,7 @@ app = FastAPI(
     description="Item management backend for DailyStuff",
     version="0.1.0",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 # CORS – allow all origins during development
@@ -46,3 +47,4 @@ app.include_router(auth.router, tags=["auth"])
 app.include_router(categories.router)
 app.include_router(tags.router)
 app.include_router(items.router)
+app.include_router(stats.router)
