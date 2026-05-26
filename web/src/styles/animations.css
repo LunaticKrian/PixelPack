@@ -1,3 +1,9 @@
+/* ═══════════════════════════════════════════════
+   DailyStuff - Pixel Art Animation System
+   Classic arcade game style micro-interactions
+   ═══════════════════════════════════════════════ */
+
+/* ── Base Keyframes ── */
 @keyframes pixel-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
@@ -23,6 +29,58 @@
   100% { transform: rotate(360deg); }
 }
 
+@keyframes pixel-glow-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(65, 166, 246, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(65, 166, 246, 0.6), 0 0 24px rgba(65, 166, 246, 0.2); }
+}
+
+@keyframes pixel-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes pixel-count-up {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pixel-scanline-move {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes pixel-text-shadow-pulse {
+  0%, 100% { text-shadow: 0 0 6px currentColor; }
+  50% { text-shadow: 0 0 16px currentColor, 0 0 32px currentColor; }
+}
+
+@keyframes pixel-border-dash {
+  0% { border-color: var(--pixel-border); }
+  50% { border-color: var(--pixel-primary); }
+  100% { border-color: var(--pixel-border); }
+}
+
+@keyframes pixel-slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pixel-scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pixel-stagger-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pixel-progress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+/* ── Utility Animation Classes ── */
 .animate-blink {
   animation: pixel-blink 1s step-end infinite;
 }
@@ -39,10 +97,181 @@
   animation: pixel-press 0.1s steps(2) forwards;
 }
 
+.animate-glow {
+  animation: pixel-glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: pixel-float 2s ease-in-out infinite;
+}
+
+.animate-text-glow {
+  animation: pixel-text-shadow-pulse 2s ease-in-out infinite;
+}
+
+.animate-scale-in {
+  animation: pixel-scale-in 0.25s ease-out;
+}
+
+.animate-slide-up {
+  animation: pixel-slide-up 0.3s ease-out;
+}
+
+.animate-stagger-in {
+  animation: pixel-stagger-in 0.3s ease-out backwards;
+}
+
+/* ── Loading Spinner ── */
 .pixel-loading {
   width: 24px;
   height: 24px;
   border: 3px solid var(--pixel-border);
   border-top-color: var(--pixel-primary);
   animation: pixel-spin 0.8s steps(8) infinite;
+}
+
+/* ═══════════════════════════════════════════════
+   Interactive Hover Effects
+   ═══════════════════════════════════════════════ */
+
+/* Card hover - border glow only, no transform */
+.pixel-card-hover {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pixel-card-hover:hover {
+  border-color: var(--pixel-primary);
+  box-shadow: 4px 4px 0 var(--pixel-shadow);
+}
+.pixel-card-hover:active {
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
+  transition-duration: 0.05s;
+}
+
+/* Button glow on hover */
+.pixel-btn-glow {
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
+  position: relative;
+}
+.pixel-btn-glow:hover {
+  box-shadow: 3px 3px 0 var(--pixel-shadow), 0 0 8px rgba(65, 166, 246, 0.3);
+}
+.pixel-btn-glow:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
+  transition-duration: 0.04s;
+}
+
+/* Input focus pulse */
+.pixel-input-pulse:focus {
+  border-color: var(--pixel-primary);
+  box-shadow: 0 0 0 1px var(--pixel-primary), 0 0 8px rgba(65, 166, 246, 0.15);
+  transition: border-color 0.15s ease, box-shadow 0.25s ease;
+}
+
+/* Nav item hover */
+.pixel-nav-hover {
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+/* ═══════════════════════════════════════════════
+   Staggered List Entrance
+   ═══════════════════════════════════════════════ */
+.stagger-list > * {
+  animation: pixel-stagger-in 0.3s ease-out backwards;
+}
+.stagger-list > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger-list > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger-list > *:nth-child(3) { animation-delay: 0.09s; }
+.stagger-list > *:nth-child(4) { animation-delay: 0.12s; }
+.stagger-list > *:nth-child(5) { animation-delay: 0.15s; }
+.stagger-list > *:nth-child(6) { animation-delay: 0.18s; }
+.stagger-list > *:nth-child(7) { animation-delay: 0.21s; }
+.stagger-list > *:nth-child(8) { animation-delay: 0.24s; }
+.stagger-list > *:nth-child(9) { animation-delay: 0.27s; }
+.stagger-list > *:nth-child(10) { animation-delay: 0.30s; }
+.stagger-list > *:nth-child(n+11) { animation-delay: 0.33s; }
+
+/* ═══════════════════════════════════════════════
+   Vue Route Transitions
+   ═══════════════════════════════════════════════ */
+.route-enter-active {
+  transition: opacity 0.2s ease;
+}
+.route-leave-active {
+  transition: opacity 0.12s ease;
+}
+.route-enter-from {
+  opacity: 0;
+}
+.route-leave-to {
+  opacity: 0;
+}
+
+/* Modal transitions */
+.modal-enter-active {
+  animation: pixel-scale-in 0.2s ease-out;
+}
+.modal-leave-active {
+  animation: pixel-scale-in 0.15s ease-in reverse;
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* List transition (for v-for with TransitionGroup) */
+.list-enter-active {
+  animation: pixel-stagger-in 0.3s ease-out;
+}
+.list-leave-active {
+  animation: pixel-stagger-in 0.2s ease-in reverse;
+  position: absolute;
+}
+.list-move {
+  transition: transform 0.25s ease;
+}
+
+/* ═══════════════════════════════════════════════
+   Decorative Animations
+   ═══════════════════════════════════════════════ */
+
+/* "INSERT COIN" blink */
+.insert-coin {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--pixel-warning);
+  animation: pixel-blink 1.2s step-end infinite;
+  letter-spacing: 2px;
+}
+
+/* Scanline sweep overlay */
+.pixel-scanline-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(transparent, rgba(65, 166, 246, 0.08), transparent);
+  animation: pixel-scanline-move 4s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Progress bar fill */
+.pixel-progress-bar {
+  height: 100%;
+  background: var(--pixel-primary);
+  animation: pixel-progress 1s steps(10) ease-out forwards;
+}
+
+/* Score counter (for stat values) */
+.pixel-score-counter {
+  animation: pixel-count-up 0.4s ease-out;
 }

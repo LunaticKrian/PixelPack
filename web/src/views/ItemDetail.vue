@@ -231,7 +231,7 @@ onMounted(fetchItem)
       <div class="not-found-icon">?</div>
       <h2 class="not-found-title">物品不存在</h2>
       <p class="not-found-desc">该物品可能已被删除或ID无效</p>
-      <button class="pixel-btn primary" @click="router.push('/items')">
+      <button class="pixel-btn pixel-btn-glow primary" @click="router.push('/items')">
         &lt; 返回列表
       </button>
     </div>
@@ -300,7 +300,7 @@ onMounted(fetchItem)
           </div>
 
           <!-- Item name & status -->
-          <div class="card item-header-card">
+          <div class="card item-header-card pixel-card-hover">
             <div class="item-name-row">
               <h1 class="item-name">{{ item.name }}</h1>
               <span
@@ -320,7 +320,7 @@ onMounted(fetchItem)
           </div>
 
           <!-- Item details card -->
-          <div class="card details-card">
+          <div class="card details-card pixel-card-hover">
             <div class="card-title">
               <span class="title-bracket">[</span>物品信息<span class="title-bracket">]</span>
             </div>
@@ -368,7 +368,7 @@ onMounted(fetchItem)
         <!-- Right column: stats & actions -->
         <div class="column-right">
           <!-- Cost stats card (CORE FEATURE) -->
-          <div class="card stats-card">
+          <div class="card stats-card pixel-card-hover">
             <div class="card-title">
               <span class="title-bracket">[</span>成本分析<span class="title-bracket">]</span>
             </div>
@@ -417,13 +417,13 @@ onMounted(fetchItem)
 
           <!-- Action buttons -->
           <div class="card actions-card">
-            <button class="pixel-btn primary" @click="goEdit">
+            <button class="pixel-btn pixel-btn-glow primary" @click="goEdit">
               <span class="btn-icon">&#9998;</span> 编辑
             </button>
-            <button class="pixel-btn warning" @click="openStatusModal">
+            <button class="pixel-btn pixel-btn-glow warning" @click="openStatusModal">
               <span class="btn-icon">&#9651;</span> 状态
             </button>
-            <button class="pixel-btn danger" @click="openDeleteConfirm">
+            <button class="pixel-btn pixel-btn-glow danger" @click="openDeleteConfirm">
               <span class="btn-icon">&#10005;</span> 删除
             </button>
           </div>
@@ -436,7 +436,7 @@ onMounted(fetchItem)
           <div class="card-title">
             <span class="title-bracket">[</span>附加费用<span class="title-bracket">]</span>
           </div>
-          <button class="pixel-btn small primary" @click="openAddCost">+ 添加</button>
+          <button class="pixel-btn pixel-btn-glow small primary" @click="openAddCost">+ 添加</button>
         </div>
 
         <!-- Add cost form -->
@@ -456,11 +456,11 @@ onMounted(fetchItem)
             </div>
           </div>
           <div class="form-actions">
-            <button class="pixel-btn small primary" @click="submitCost" :disabled="costSubmitting">
+            <button class="pixel-btn pixel-btn-glow small primary" @click="submitCost" :disabled="costSubmitting">
               <span v-if="costSubmitting" class="pixel-loading inline"></span>
               <span v-else>确认</span>
             </button>
-            <button class="pixel-btn small" @click="showAddCost = false">取消</button>
+            <button class="pixel-btn pixel-btn-glow small" @click="showAddCost = false">取消</button>
           </div>
         </div>
 
@@ -524,11 +524,11 @@ onMounted(fetchItem)
             </div>
           </div>
           <div class="modal-actions">
-            <button class="pixel-btn primary" @click="confirmStatusChange" :disabled="statusSubmitting">
+            <button class="pixel-btn pixel-btn-glow primary" @click="confirmStatusChange" :disabled="statusSubmitting">
               <span v-if="statusSubmitting" class="pixel-loading inline"></span>
               <span v-else>确认</span>
             </button>
-            <button class="pixel-btn" @click="showStatusModal = false">取消</button>
+            <button class="pixel-btn pixel-btn-glow" @click="showStatusModal = false">取消</button>
           </div>
         </div>
       </div>
@@ -547,11 +547,11 @@ onMounted(fetchItem)
             </p>
           </div>
           <div class="modal-actions">
-            <button class="pixel-btn danger" @click="confirmDelete" :disabled="deleting">
+            <button class="pixel-btn pixel-btn-glow danger" @click="confirmDelete" :disabled="deleting">
               <span v-if="deleting" class="pixel-loading inline"></span>
               <span v-else>确认删除</span>
             </button>
-            <button class="pixel-btn" @click="showDeleteConfirm = false">取消</button>
+            <button class="pixel-btn pixel-btn-glow" @click="showDeleteConfirm = false">取消</button>
           </div>
         </div>
       </div>
@@ -573,6 +573,11 @@ onMounted(fetchItem)
   border: 3px solid var(--pixel-border);
   box-shadow: 3px 3px 0 var(--pixel-shadow);
   padding: 16px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.card.pixel-card-hover:hover {
+  border-color: var(--pixel-text-secondary);
 }
 
 .card-title {
@@ -922,6 +927,10 @@ onMounted(fetchItem)
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: transform 0.12s ease;
+}
+
+.detail-item:hover {
 }
 
 .detail-label {
@@ -976,6 +985,7 @@ onMounted(fetchItem)
   color: var(--pixel-primary);
   text-shadow: 0 0 12px rgba(60, 187, 177, 0.4);
   line-height: 1.2;
+  animation: pixel-count-up 0.5s ease-out;
 }
 
 .stat-hero-unit {
@@ -1002,6 +1012,11 @@ onMounted(fetchItem)
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: background 0.1s ease;
+}
+
+.stat-row:hover {
+  background: rgba(65, 166, 246, 0.05);
 }
 
 .stat-row-label {
@@ -1048,10 +1063,12 @@ onMounted(fetchItem)
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .pixel-btn:hover {
   background: var(--pixel-card-bg);
+  box-shadow: 3px 3px 0 var(--pixel-shadow), 0 0 8px rgba(60, 187, 177, 0.15);
 }
 
 .pixel-btn:active {
@@ -1221,10 +1238,11 @@ onMounted(fetchItem)
   padding: 8px 10px;
   background: var(--pixel-bg);
   border: 1px solid var(--pixel-border);
+  transition: background 0.1s ease, transform 0.1s ease;
 }
 
 .cost-item:hover {
-  background: rgba(60, 187, 177, 0.05);
+  background: rgba(65, 166, 246, 0.08);
 }
 
 .cost-info {
@@ -1334,6 +1352,7 @@ onMounted(fetchItem)
   max-width: 90vw;
   max-height: 90vh;
   overflow-y: auto;
+  animation: pixel-scale-in 0.2s ease-out;
 }
 
 .modal-title {
@@ -1382,7 +1401,7 @@ onMounted(fetchItem)
   border: 2px solid var(--pixel-border);
   cursor: pointer;
   background: var(--pixel-bg);
-  transition: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
 }
 
 .status-option:hover {

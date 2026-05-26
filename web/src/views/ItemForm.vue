@@ -244,7 +244,7 @@ onMounted(async () => {
         {{ error }}
       </div>
 
-      <form class="form-card" @submit.prevent="handleSubmit">
+      <form class="form-card pixel-card-hover" @submit.prevent="handleSubmit">
         <!-- Section 1: Basic Info -->
         <section class="form-section">
           <h2 class="section-title">— 基本信息 —</h2>
@@ -492,7 +492,7 @@ onMounted(async () => {
 
         <!-- Action buttons -->
         <div class="form-actions">
-          <button type="submit" class="btn-save" :disabled="loading">
+          <button type="submit" class="btn-save pixel-btn-glow" :disabled="loading">
             <span v-if="loading" class="pixel-loading inline"></span>
             <span v-else>▶ SAVE</span>
           </button>
@@ -584,6 +584,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: border-color 0.15s ease;
 }
 
 /* Sections */
@@ -653,7 +654,8 @@ onMounted(async () => {
 
 .pixel-input:focus {
   border-color: var(--pixel-primary);
-  box-shadow: 0 0 0 1px var(--pixel-primary);
+  box-shadow: 0 0 0 1px var(--pixel-primary), 0 0 8px rgba(65, 166, 246, 0.15);
+  transition: border-color 0.15s ease, box-shadow 0.25s ease;
 }
 
 .pixel-input::placeholder {
@@ -727,7 +729,7 @@ onMounted(async () => {
   font-family: var(--font-pixel);
   font-size: 13px;
   color: var(--pixel-text-secondary);
-  transition: none;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
   user-select: none;
 }
 
@@ -817,7 +819,7 @@ onMounted(async () => {
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  transition: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .upload-area:hover {
@@ -871,11 +873,12 @@ onMounted(async () => {
   justify-content: center;
   gap: 8px;
   min-width: 160px;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .btn-save:hover {
   background: #4ecdc4;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 3px 3px 0 var(--pixel-shadow), 0 0 8px rgba(65, 166, 246, 0.3);
 }
 
 .btn-save:active {

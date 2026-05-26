@@ -185,7 +185,7 @@ onMounted(loadCategories)
     <!-- Header -->
     <div class="page-header">
       <h1 class="page-title">▦ 分类管理</h1>
-      <button class="pixel-btn primary" @click="openCreate" :disabled="loading">
+      <button class="pixel-btn pixel-btn-glow primary" @click="openCreate" :disabled="loading">
         + 新增分类
       </button>
     </div>
@@ -200,7 +200,7 @@ onMounted(loadCategories)
     <div v-else-if="error" class="error-state">
       <div class="error-icon">!</div>
       <span class="error-text">{{ error }}</span>
-      <button class="pixel-btn" @click="loadCategories">重试</button>
+      <button class="pixel-btn pixel-btn-glow" @click="loadCategories">重试</button>
     </div>
 
     <!-- Content -->
@@ -269,13 +269,13 @@ onMounted(loadCategories)
           <div v-if="createError" class="form-error">{{ createError }}</div>
           <div class="form-actions">
             <button
-              class="pixel-btn success"
+              class="pixel-btn pixel-btn-glow success"
               @click="handleCreate"
               :disabled="creating"
             >
               {{ creating ? '保存中...' : '确认新增' }}
             </button>
-            <button class="pixel-btn" @click="showCreateForm = false">取消</button>
+            <button class="pixel-btn pixel-btn-glow" @click="showCreateForm = false">取消</button>
           </div>
         </div>
       </div>
@@ -284,20 +284,20 @@ onMounted(loadCategories)
       <div v-if="categories.length === 0 && !showCreateForm" class="empty-state">
         <div class="empty-icon">▦</div>
         <div class="empty-text">还没有分类</div>
-        <button class="pixel-btn primary" @click="openCreate">+ 新增分类</button>
+        <button class="pixel-btn pixel-btn-glow primary" @click="openCreate">+ 新增分类</button>
       </div>
 
       <!-- Category Grid -->
-      <div v-else class="category-grid">
+      <div v-else class="category-grid stagger-list">
         <div
           v-for="cat in categories"
           :key="cat.id"
-          class="category-card"
+          class="category-card pixel-card-hover"
           :class="{ editing: editingId === cat.id }"
         >
           <!-- Normal Card -->
           <template v-if="editingId !== cat.id">
-            <div class="card-icon-area" :style="{ background: cat.color || '#29366f' }">
+            <div class="card-icon-area" :style="{ background: cat.color || '#182548' }">
               <span class="card-icon">{{ cat.icon || '▦' }}</span>
             </div>
             <div class="card-body">
@@ -381,13 +381,13 @@ onMounted(loadCategories)
                 <div v-if="editError" class="form-error">{{ editError }}</div>
                 <div class="form-actions">
                   <button
-                    class="pixel-btn success"
+                    class="pixel-btn pixel-btn-glow success"
                     @click="handleSave"
                     :disabled="saving"
                   >
                     {{ saving ? '保存中...' : '保存' }}
                   </button>
-                  <button class="pixel-btn" @click="resetEditForm">取消</button>
+                  <button class="pixel-btn pixel-btn-glow" @click="resetEditForm">取消</button>
                 </div>
               </div>
             </div>
@@ -413,13 +413,13 @@ onMounted(loadCategories)
           </div>
           <div class="modal-actions">
             <button
-              class="pixel-btn accent"
+              class="pixel-btn pixel-btn-glow accent"
               @click="handleDelete"
               :disabled="deleting"
             >
               {{ deleting ? '删除中...' : '确认删除' }}
             </button>
-            <button class="pixel-btn" @click="deleteTarget = null">取消</button>
+            <button class="pixel-btn pixel-btn-glow" @click="deleteTarget = null">取消</button>
           </div>
         </div>
       </div>
@@ -503,7 +503,7 @@ onMounted(loadCategories)
   color: var(--pixel-text);
   cursor: pointer;
   box-shadow: 3px 3px 0 var(--pixel-shadow);
-  transition: transform 0.05s steps(1), border-color 0.1s steps(2);
+  transition: transform 0.08s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
   border-radius: 0;
 }
@@ -526,7 +526,7 @@ onMounted(loadCategories)
 .pixel-btn.primary {
   background: var(--pixel-primary);
   border-color: var(--pixel-primary);
-  color: #1a1c2c;
+  color: #0e1225;
 }
 
 .pixel-btn.primary:hover {
@@ -536,7 +536,7 @@ onMounted(loadCategories)
 .pixel-btn.success {
   background: var(--pixel-success);
   border-color: var(--pixel-success);
-  color: #1a1c2c;
+  color: #0e1225;
 }
 
 .pixel-btn.success:hover {
@@ -669,10 +669,12 @@ onMounted(loadCategories)
   border-radius: 0;
   width: 100%;
   box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.25s ease;
 }
 
 .pixel-input:focus {
   border-color: var(--pixel-primary);
+  box-shadow: 0 0 0 1px var(--pixel-primary), 0 0 8px rgba(65, 166, 246, 0.15);
 }
 
 .pixel-input::placeholder {
@@ -790,12 +792,18 @@ onMounted(loadCategories)
   box-shadow: 3px 3px 0 var(--pixel-shadow);
   display: flex;
   flex-direction: column;
-  transition: border-color 0.1s steps(2);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   overflow: hidden;
 }
 
 .category-card:hover {
   border-color: var(--pixel-primary);
+  box-shadow: 4px 6px 0 var(--pixel-shadow);
+}
+
+.category-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
 }
 
 .category-card.editing {
@@ -895,6 +903,7 @@ onMounted(loadCategories)
   box-shadow: 6px 6px 0 var(--pixel-shadow);
   max-width: 400px;
   width: 100%;
+  animation: pixel-scale-in 0.2s ease-out;
 }
 
 .modal-header {

@@ -5,23 +5,23 @@
   --pixel-success: #38b764;
   --pixel-info: #73eff7;
 
-  --pixel-bg: #1a1c2c;
-  --pixel-bg-secondary: #333c57;
-  --pixel-card-bg: #29366f;
-  --pixel-border: #566c86;
+  --pixel-bg: #0e1225;
+  --pixel-bg-secondary: #141d38;
+  --pixel-card-bg: #182548;
+  --pixel-border: #2e3d62;
   --pixel-text: #f4f4f4;
-  --pixel-text-secondary: #94b0c2;
-  --pixel-shadow: rgba(0, 0, 0, 0.4);
+  --pixel-text-secondary: #7b8faa;
+  --pixel-shadow: rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="light"] {
-  --pixel-bg: #e8e8e8;
-  --pixel-bg-secondary: #d0d0d0;
-  --pixel-card-bg: #f4f4f4;
-  --pixel-border: #94b0c2;
-  --pixel-text: #1a1c2c;
-  --pixel-text-secondary: #333c57;
-  --pixel-shadow: rgba(0, 0, 0, 0.15);
+  --pixel-bg: #e0e4ec;
+  --pixel-bg-secondary: #c8cdd8;
+  --pixel-card-bg: #eef1f6;
+  --pixel-border: #94a3b8;
+  --pixel-text: #0e1225;
+  --pixel-text-secondary: #3a4a62;
+  --pixel-shadow: rgba(0, 0, 0, 0.12);
 }
 
 .pixel-border {
@@ -34,6 +34,129 @@
   box-shadow: 3px 3px 0 var(--pixel-shadow);
 }
 
+/* ═══════════════════════════════════════════════
+   CRT Scanline Overlay (global)
+   Apply via .scanlines on a fixed/absolute overlay
+   ═══════════════════════════════════════════════ */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ═══════════════════════════════════════════════
+   Pixel Grid Texture (subtle background pattern)
+   Apply on .pixel-grid-texture to any container
+   ═══════════════════════════════════════════════ */
+.pixel-grid-texture {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+/* ═══════════════════════════════════════════════
+   Noise texture (for CRT retro feel)
+   Apply on .pixel-noise for animated static noise
+   ═══════════════════════════════════════════════ */
+.pixel-noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   Decorative Corner Pieces
+   Apply .pixel-corner-decoration for retro RPG frame
+   ═══════════════════════════════════════════════ */
+.pixel-corner-decoration {
+  position: relative;
+}
+.pixel-corner-decoration::before,
+.pixel-corner-decoration::after {
+  content: '◆';
+  position: absolute;
+  font-size: 8px;
+  color: var(--pixel-primary);
+  opacity: 0.4;
+}
+.pixel-corner-decoration::before {
+  top: 6px;
+  left: 6px;
+}
+.pixel-corner-decoration::after {
+  bottom: 6px;
+  right: 6px;
+}
+
+/* ═══════════════════════════════════════════════
+   Vignette (CRT screen edge darkening)
+   ═══════════════════════════════════════════════ */
+.pixel-vignette {
+  position: relative;
+}
+.pixel-vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════
+   Glow effects
+   ═══════════════════════════════════════════════ */
+.pixel-glow-primary {
+  box-shadow: 0 0 8px rgba(65, 166, 246, 0.25), 3px 3px 0 var(--pixel-shadow);
+}
+
+.pixel-glow-accent {
+  box-shadow: 0 0 8px rgba(177, 62, 83, 0.25), 3px 3px 0 var(--pixel-shadow);
+}
+
+.pixel-glow-success {
+  box-shadow: 0 0 8px rgba(56, 183, 100, 0.25), 3px 3px 0 var(--pixel-shadow);
+}
+
+.pixel-glow-warning {
+  box-shadow: 0 0 8px rgba(239, 125, 87, 0.25), 3px 3px 0 var(--pixel-shadow);
+}
+
+/* ═══════════════════════════════════════════════
+   Pixel Divider
+   ═══════════════════════════════════════════════ */
+.pixel-divider {
+  border: none;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--pixel-border) 0px,
+    var(--pixel-border) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   Scrollbar
+   ═══════════════════════════════════════════════ */
 ::-webkit-scrollbar {
   width: 12px;
 }
@@ -47,4 +170,20 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--pixel-primary);
+}
+
+/* ═══════════════════════════════════════════════
+   Focus-visible (keyboard accessibility)
+   ═══════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--pixel-primary);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════
+   Selection color
+   ═══════════════════════════════════════════════ */
+::selection {
+  background: var(--pixel-primary);
+  color: var(--pixel-bg);
 }

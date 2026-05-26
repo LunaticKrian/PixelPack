@@ -34,23 +34,23 @@ const trendChartRef = ref<HTMLDivElement>()
 const chartInstances: echarts.ECharts[] = []
 
 // ── Pixel constants ──
-const COLORS = ['#41a6f6', '#b13e53', '#38b764', '#ef7d57', '#73eff7', '#ffcd75', '#5d275d', '#29366f']
+const COLORS = ['#41a6f6', '#b13e53', '#38b764', '#ef7d57', '#73eff7', '#ffcd75', '#5d275d', '#182548']
 
 const statusLabel: Record<string, string> = {
   ACTIVE: '使用中', IDLE: '闲置', RETIRED: '退役', SOLD: '已售', DISCARDED: '已弃',
 }
 const statusColorMap: Record<string, string> = {
-  ACTIVE: '#38b764', IDLE: '#ef7d57', RETIRED: '#94b0c2', SOLD: '#41a6f6', DISCARDED: '#b13e53',
+  ACTIVE: '#38b764', IDLE: '#ef7d57', RETIRED: '#7b8faa', SOLD: '#41a6f6', DISCARDED: '#b13e53',
 }
 
 const pixelTheme = {
-  textStyle: { fontFamily: "'Press Start 2P', 'Ark Pixel', monospace", fontSize: 10, color: '#94b0c2' },
+  textStyle: { fontFamily: "'Press Start 2P', 'Ark Pixel', monospace", fontSize: 10, color: '#7b8faa' },
   grid: { top: 36, right: 16, bottom: 28, left: 48 },
 }
 
 const tooltipStyle = {
-  backgroundColor: '#29366f',
-  borderColor: '#566c86',
+  backgroundColor: '#182548',
+  borderColor: '#2e3d62',
   borderWidth: 2,
   textStyle: { color: '#f4f4f4', fontFamily: "'Press Start 2P', monospace", fontSize: 9 },
 }
@@ -67,7 +67,7 @@ const statusDistribution = computed(() => {
     label: statusLabel[status] || status,
     count,
     pct: ((count / total) * 100).toFixed(1),
-    color: statusColorMap[status] || '#94b0c2',
+    color: statusColorMap[status] || '#7b8faa',
   }))
 })
 
@@ -154,14 +154,14 @@ function initPieChart() {
       type: 'pie',
       radius: ['30%', '60%'],
       center: ['50%', '55%'],
-      itemStyle: { borderColor: '#1a1c2c', borderWidth: 2, borderRadius: 0 },
+      itemStyle: { borderColor: '#0e1225', borderWidth: 2, borderRadius: 0 },
       label: {
-        color: '#94b0c2',
+        color: '#7b8faa',
         fontSize: 8,
         fontFamily: "'Press Start 2P', monospace",
         formatter: '{b}\n{d}%',
       },
-      labelLine: { lineStyle: { color: '#566c86', width: 2 } },
+      labelLine: { lineStyle: { color: '#2e3d62', width: 2 } },
       data: categoryStats.value.map((c, i) => ({
         name: c.category_name,
         value: c.item_count,
@@ -188,10 +188,10 @@ function initRankChart() {
     },
     xAxis: {
       type: 'value',
-      splitLine: { lineStyle: { color: '#333c57', type: [4, 4] } },
+      splitLine: { lineStyle: { color: '#141d38', type: [4, 4] } },
       axisLine: { show: false },
       axisLabel: {
-        color: '#94b0c2', fontSize: 8,
+        color: '#7b8faa', fontSize: 8,
         fontFamily: "'Ark Pixel', monospace",
         formatter: '¥{value}',
       },
@@ -199,7 +199,7 @@ function initRankChart() {
     yAxis: {
       type: 'category',
       data: names,
-      axisLine: { lineStyle: { color: '#566c86', width: 2 } },
+      axisLine: { lineStyle: { color: '#2e3d62', width: 2 } },
       axisTick: { show: false },
       axisLabel: { color: '#f4f4f4', fontSize: 8, fontFamily: "'Ark Pixel', monospace" },
     },
@@ -214,7 +214,7 @@ function initRankChart() {
           if (i < 5) return '#ffcd75'
           return '#41a6f6'
         },
-        borderColor: '#1a1c2c',
+        borderColor: '#0e1225',
         borderWidth: 1,
         borderRadius: 0,
       },
@@ -255,26 +255,26 @@ function initTrendChart() {
     legend: {
       top: 4,
       right: 16,
-      textStyle: { color: '#94b0c2', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
+      textStyle: { color: '#7b8faa', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
       itemWidth: 12,
       itemHeight: 8,
     },
     xAxis: {
       type: 'category',
       data: months,
-      axisLine: { lineStyle: { color: '#566c86', width: 2 } },
+      axisLine: { lineStyle: { color: '#2e3d62', width: 2 } },
       axisTick: { show: false },
-      axisLabel: { color: '#94b0c2', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
+      axisLabel: { color: '#7b8faa', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
     },
     yAxis: [
       {
         type: 'value',
         name: '月消费',
-        nameTextStyle: { color: '#94b0c2', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
-        splitLine: { lineStyle: { color: '#333c57', type: [4, 4] } },
+        nameTextStyle: { color: '#7b8faa', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
+        splitLine: { lineStyle: { color: '#141d38', type: [4, 4] } },
         axisLine: { show: false },
         axisLabel: {
-          color: '#94b0c2', fontSize: 8,
+          color: '#7b8faa', fontSize: 8,
           fontFamily: "'Ark Pixel', monospace",
           formatter: '¥{value}',
         },
@@ -282,11 +282,11 @@ function initTrendChart() {
       {
         type: 'value',
         name: '累计',
-        nameTextStyle: { color: '#94b0c2', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
+        nameTextStyle: { color: '#7b8faa', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
         splitLine: { show: false },
         axisLine: { show: false },
         axisLabel: {
-          color: '#94b0c2', fontSize: 8,
+          color: '#7b8faa', fontSize: 8,
           fontFamily: "'Ark Pixel', monospace",
           formatter: '¥{value}',
         },
@@ -300,7 +300,7 @@ function initTrendChart() {
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: '#41a6f6' },
-            { offset: 1, color: '#29366f' },
+            { offset: 1, color: '#182548' },
           ]),
           borderColor: '#41a6f6',
           borderWidth: 1,
@@ -317,7 +317,7 @@ function initTrendChart() {
         symbol: 'rect',
         symbolSize: 6,
         lineStyle: { color: '#ef7d57', width: 2, type: 'solid' },
-        itemStyle: { color: '#ef7d57', borderColor: '#1a1c2c', borderWidth: 1 },
+        itemStyle: { color: '#ef7d57', borderColor: '#0e1225', borderWidth: 1 },
       },
     ],
   })
@@ -373,33 +373,33 @@ onBeforeUnmount(() => {
             <option value="year">YEAR</option>
           </select>
         </div>
-        <button class="pixel-btn" @click="loadAll">刷新数据</button>
+        <button class="pixel-btn pixel-btn-glow" @click="loadAll">刷新数据</button>
       </div>
 
       <!-- ═══ Section 2: Overview Cards ═══ -->
-      <div class="overview-grid">
-        <div class="stat-card">
+      <div class="overview-grid stagger-list">
+        <div class="stat-card pixel-card-hover">
           <div class="stat-icon">&#9670;</div>
           <div class="stat-info">
             <div class="stat-value">{{ overview?.total_items ?? 0 }}</div>
             <div class="stat-label">TOTAL ITEMS</div>
           </div>
         </div>
-        <div class="stat-card accent">
+        <div class="stat-card accent pixel-card-hover">
           <div class="stat-icon">$</div>
           <div class="stat-info">
             <div class="stat-value">{{ formatCurrency(overview?.total_assets_value ?? 0) }}</div>
             <div class="stat-label">TOTAL ASSETS</div>
           </div>
         </div>
-        <div class="stat-card primary">
+        <div class="stat-card primary pixel-card-hover">
           <div class="stat-icon">&#9672;</div>
           <div class="stat-info">
             <div class="stat-value">{{ formatCurrency(overview?.avg_daily_cost ?? 0) }}</div>
             <div class="stat-label">AVG DAILY COST</div>
           </div>
         </div>
-        <div class="stat-card success">
+        <div class="stat-card success pixel-card-hover">
           <div class="stat-icon">&#9654;</div>
           <div class="stat-info">
             <div class="stat-value">{{ overview?.active_items ?? 0 }}</div>
@@ -409,7 +409,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- ═══ Section 3: Category Analysis ═══ -->
-      <div class="section-card">
+      <div class="section-card pixel-card-hover">
         <h3 class="section-title">CATEGORY ANALYSIS</h3>
         <div class="category-layout">
           <!-- Pie chart -->
@@ -446,7 +446,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- ═══ Section 4: Cost Analysis ═══ -->
-      <div class="section-card">
+      <div class="section-card pixel-card-hover">
         <h3 class="section-title">COST ANALYSIS</h3>
         <div class="cost-layout">
           <!-- Daily cost rank bar chart -->
@@ -478,14 +478,14 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- ═══ Section 5: Spending Trends ═══ -->
-      <div class="section-card">
+      <div class="section-card pixel-card-hover">
         <h3 class="section-title">SPENDING TRENDS</h3>
         <div v-if="trends.length === 0" class="chart-empty chart-wide">NO DATA</div>
         <div v-else ref="trendChartRef" class="chart-container chart-trend"></div>
       </div>
 
       <!-- ═══ Section 6: Warranty & Lifecycle ═══ -->
-      <div class="section-card">
+      <div class="section-card pixel-card-hover">
         <h3 class="section-title">WARRANTY &amp; LIFECYCLE</h3>
         <div class="warranty-layout">
           <!-- Warranty alerts -->
@@ -498,7 +498,7 @@ onBeforeUnmount(() => {
             <div v-else class="alert-list">
               <div
                 v-for="alert in warrantyAlerts" :key="alert.id"
-                class="alert-item"
+                class="alert-item pixel-card-hover"
                 @click="goToItem(alert.id)"
               >
                 <div class="alert-left">
@@ -595,7 +595,7 @@ onBeforeUnmount(() => {
 }
 
 .pixel-input {
-  background: #1a1c2c;
+  background: #0e1225;
   border: 3px solid var(--pixel-border);
   color: #f4f4f4;
   font-family: 'Ark Pixel', 'Press Start 2P', monospace;
@@ -617,7 +617,7 @@ onBeforeUnmount(() => {
 select.pixel-input {
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394b0c2'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237b8faa'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
   padding-right: 24px;
@@ -625,12 +625,12 @@ select.pixel-input {
 }
 
 select.pixel-input option {
-  background: #29366f;
+  background: #182548;
   color: #f4f4f4;
 }
 
 .pixel-btn {
-  background: #29366f;
+  background: #182548;
   border: 3px solid var(--pixel-primary);
   color: var(--pixel-primary);
   font-family: 'Press Start 2P', monospace;
@@ -638,14 +638,14 @@ select.pixel-input option {
   padding: 8px 16px;
   cursor: pointer;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
-  transition: background 0.1s steps(2), color 0.1s steps(2);
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
   margin-left: auto;
   white-space: nowrap;
 }
 
 .pixel-btn:hover {
   background: var(--pixel-primary);
-  color: #1a1c2c;
+  color: #0e1225;
 }
 
 .pixel-btn:active {
@@ -668,11 +668,17 @@ select.pixel-input option {
   align-items: center;
   gap: 16px;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
-  transition: border-color 0.1s steps(2);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .stat-card:hover {
   border-color: var(--pixel-text-secondary);
+  box-shadow: 4px 6px 0 var(--pixel-shadow);
+}
+
+.stat-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
 }
 
 .stat-card.accent .stat-icon { color: var(--pixel-accent); }
@@ -706,6 +712,7 @@ select.pixel-input option {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  animation: pixel-count-up 0.4s ease-out;
 }
 
 .stat-label {
@@ -722,6 +729,11 @@ select.pixel-input option {
   border: 3px solid var(--pixel-border);
   padding: 20px;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.section-card:hover {
+  border-color: var(--pixel-text-secondary);
 }
 
 .section-title {
@@ -787,7 +799,7 @@ select.pixel-input option {
   letter-spacing: 1px;
   text-align: left;
   padding: 8px 10px;
-  background: #1a1c2c;
+  background: #0e1225;
   border: 2px solid var(--pixel-border);
 }
 
@@ -798,22 +810,23 @@ select.pixel-input option {
 }
 
 .pixel-table tbody tr:nth-child(odd) {
-  background: #222850;
+  background: #141d38;
 }
 
 .pixel-table tbody tr:nth-child(even) {
-  background: #29366f;
+  background: #182548;
 }
 
 .pixel-table tbody tr:hover {
-  background: #333c57;
+  background: #1a2540;
+  transition: background 0.1s ease;
 }
 
 .color-dot {
   display: inline-block;
   width: 10px;
   height: 10px;
-  border: 1px solid #566c86;
+  border: 1px solid #2e3d62;
   margin-right: 6px;
   vertical-align: middle;
 }
@@ -861,7 +874,7 @@ select.pixel-input option {
 .status-bar-track {
   flex: 1;
   height: 18px;
-  background: #1a1c2c;
+  background: #0e1225;
   border: 2px solid var(--pixel-border);
   overflow: hidden;
 }
@@ -915,10 +928,10 @@ select.pixel-input option {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: #1a1c2c;
+  background: #0e1225;
   border: 2px solid var(--pixel-border);
   cursor: pointer;
-  transition: border-color 0.1s steps(2);
+  transition: border-color 0.12s ease, transform 0.12s ease;
 }
 
 .alert-item:hover {
@@ -986,7 +999,7 @@ select.pixel-input option {
 .lifecycle-dot {
   width: 10px;
   height: 10px;
-  border: 1px solid #566c86;
+  border: 1px solid #2e3d62;
   flex-shrink: 0;
 }
 
@@ -1005,7 +1018,7 @@ select.pixel-input option {
 .lifecycle-bar-track {
   flex: 1;
   height: 14px;
-  background: #1a1c2c;
+  background: #0e1225;
   border: 2px solid var(--pixel-border);
   overflow: hidden;
 }

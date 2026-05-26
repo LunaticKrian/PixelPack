@@ -89,13 +89,6 @@ async function handleDelete(tag: Tag) {
   }
 }
 
-function colorAtOpacity(hex: string, opacity: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`
-}
-
 onMounted(loadTags)
 </script>
 
@@ -104,7 +97,7 @@ onMounted(loadTags)
     <!-- Header -->
     <div class="page-header">
       <h1 class="page-title">◎ 标签管理</h1>
-      <button class="btn btn-primary pixel-shadow" @click="openNewForm" :disabled="showNewForm">
+      <button class="pixel-btn primary pixel-btn-glow" @click="openNewForm" :disabled="showNewForm">
         + 新增标签
       </button>
     </div>
@@ -124,33 +117,41 @@ onMounted(loadTags)
 
     <template v-else>
       <!-- New tag form -->
-      <div v-if="showNewForm" class="new-form pixel-border animate-fade-in">
-        <div class="form-title">+ NEW TAG</div>
-        <div class="form-row">
-          <input
-            v-model="newForm.name"
-            type="text"
-            class="pixel-input"
-            placeholder="标签名称"
-            maxlength="30"
-            @keydown.enter="handleCreate"
-          />
-          <div class="color-picker-wrap">
-            <input v-model="newForm.color" type="color" class="color-input" />
-            <span class="color-label">COLOR</span>
-          </div>
+      <div v-if="showNewForm" class="form-card pixel-border animate-fade-in">
+        <div class="form-header">
+          <h3 class="form-title">+ NEW TAG</h3>
         </div>
-        <div class="form-actions">
-          <button
-            class="btn btn-success pixel-shadow animate-press"
-            @click="handleCreate"
-            :disabled="!newForm.name.trim() || saving"
-          >
-            {{ saving ? '...' : 'SAVE' }}
-          </button>
-          <button class="btn btn-cancel pixel-shadow animate-press" @click="cancelNew">
-            CANCEL
-          </button>
+        <div class="form-body">
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label">NAME *</label>
+              <input
+                v-model="newForm.name"
+                type="text"
+                class="pixel-input"
+                placeholder="标签名称"
+                maxlength="30"
+                @keydown.enter="handleCreate"
+              />
+            </div>
+            <div class="form-field field-color">
+              <label class="form-label">COLOR</label>
+              <div class="color-picker-wrap">
+                <input v-model="newForm.color" type="color" class="color-input" />
+                <span class="color-value">{{ newForm.color }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button
+              class="pixel-btn success pixel-btn-glow"
+              @click="handleCreate"
+              :disabled="!newForm.name.trim() || saving"
+            >
+              {{ saving ? '...' : 'SAVE' }}
+            </button>
+            <button class="pixel-btn" @click="cancelNew">CANCEL</button>
+          </div>
         </div>
       </div>
 
@@ -158,59 +159,71 @@ onMounted(loadTags)
       <div v-if="tags.length === 0 && !showNewForm" class="empty-state animate-fade-in">
         <div class="empty-icon">◎</div>
         <div class="empty-text">还没有标签</div>
-        <button class="btn btn-primary pixel-shadow animate-press" @click="openNewForm">
+        <button class="pixel-btn primary pixel-btn-glow" @click="openNewForm">
           + 创建第一个标签
         </button>
       </div>
 
-      <!-- Tag cloud -->
-      <div v-if="tags.length > 0" class="tag-cloud">
+      <!-- Tag grid -->
+      <div v-if="tags.length > 0" class="tag-grid stagger-list">
         <div
           v-for="tag in tags"
           :key="tag.id"
-          class="tag-badge"
+          class="tag-card"
           :class="{ editing: editingId === tag.id }"
-          :style="{
-            borderLeftColor: tag.color,
-            background: colorAtOpacity(tag.color, 0.15),
-          }"
         >
           <!-- Display mode -->
           <template v-if="editingId !== tag.id">
-            <span class="tag-color-dot" :style="{ background: tag.color }"></span>
-            <span class="tag-name">{{ tag.name }}</span>
-            <div class="tag-actions">
-              <button class="tag-btn tag-edit" @click="startEdit(tag)" title="编辑">✎</button>
-              <button class="tag-btn tag-delete" @click="handleDelete(tag)" title="删除">✕</button>
+            <div class="card-color-bar" :style="{ background: tag.color }"></div>
+            <div class="card-body">
+              <div class="card-top">
+                <span class="color-dot" :style="{ background: tag.color }"></span>
+                <span class="tag-name">{{ tag.name }}</span>
+              </div>
+              <span class="color-hex">{{ tag.color }}</span>
+            </div>
+            <div class="card-actions">
+              <button class="card-action-btn" @click="startEdit(tag)" title="编辑">✎</button>
+              <button class="card-action-btn danger" @click="handleDelete(tag)" title="删除">✕</button>
             </div>
           </template>
 
           <!-- Edit mode -->
           <template v-else>
-            <div class="edit-form-inline">
-              <div class="form-row compact">
-                <input
-                  v-model="editForm.name"
-                  type="text"
-                  class="pixel-input"
-                  placeholder="标签名称"
-                  maxlength="30"
-                  @keydown.enter="handleSaveEdit(tag.id)"
-                  @keydown.escape="cancelEdit"
-                />
-                <input v-model="editForm.color" type="color" class="color-input" />
+            <div class="form-card inline-edit animate-fade-in">
+              <div class="form-header">
+                <h3 class="form-title">✎ 编辑标签</h3>
+                <button class="close-btn" @click="cancelEdit">✕</button>
               </div>
-              <div class="form-actions compact">
-                <button
-                  class="btn btn-success btn-sm pixel-shadow animate-press"
-                  @click="handleSaveEdit(tag.id)"
-                  :disabled="!editForm.name.trim() || saving"
-                >
-                  {{ saving ? '...' : 'SAVE' }}
-                </button>
-                <button class="btn btn-cancel btn-sm pixel-shadow animate-press" @click="cancelEdit">
-                  CANCEL
-                </button>
+              <div class="form-body">
+                <div class="form-row">
+                  <div class="form-field">
+                    <label class="form-label">NAME *</label>
+                    <input
+                      v-model="editForm.name"
+                      type="text"
+                      class="pixel-input"
+                      placeholder="标签名称"
+                      maxlength="30"
+                      @keydown.enter="handleSaveEdit(tag.id)"
+                      @keydown.escape="cancelEdit"
+                    />
+                  </div>
+                  <div class="form-field field-color">
+                    <label class="form-label">COLOR</label>
+                    <input v-model="editForm.color" type="color" class="color-input" />
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button
+                    class="pixel-btn success pixel-btn-glow"
+                    @click="handleSaveEdit(tag.id)"
+                    :disabled="!editForm.name.trim() || saving"
+                  >
+                    {{ saving ? '...' : 'SAVE' }}
+                  </button>
+                  <button class="pixel-btn" @click="cancelEdit">CANCEL</button>
+                </div>
               </div>
             </div>
           </template>
@@ -243,6 +256,54 @@ onMounted(loadTags)
   margin: 0;
 }
 
+/* ===== Shared Buttons ===== */
+.pixel-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 8px 16px;
+  border: 3px solid var(--pixel-border);
+  background: var(--pixel-card-bg);
+  color: var(--pixel-text);
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.pixel-btn:hover {
+  border-color: var(--pixel-text-secondary);
+}
+
+.pixel-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
+}
+
+.pixel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pixel-btn.primary {
+  background: var(--pixel-primary);
+  border-color: var(--pixel-primary);
+  color: #0e1225;
+}
+
+.pixel-btn.primary:hover {
+  border-color: var(--pixel-text);
+}
+
+.pixel-btn.success {
+  background: var(--pixel-success);
+  border-color: var(--pixel-success);
+  color: #0e1225;
+}
+
+.pixel-btn.success:hover {
+  border-color: var(--pixel-text);
+}
+
 /* ===== Error ===== */
 .error-banner {
   display: flex;
@@ -258,7 +319,6 @@ onMounted(loadTags)
 .error-icon {
   font-family: 'Press Start 2P', monospace;
   font-size: 12px;
-  font-weight: bold;
   width: 24px;
   height: 24px;
   display: flex;
@@ -299,64 +359,6 @@ onMounted(loadTags)
   color: var(--pixel-text-secondary);
 }
 
-/* ===== Buttons ===== */
-.btn {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  padding: 10px 16px;
-  border: 3px solid;
-  cursor: pointer;
-  background: var(--pixel-card-bg);
-  color: var(--pixel-text);
-  transition: transform 0.05s steps(2);
-  letter-spacing: 0.5px;
-}
-
-.btn:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--pixel-shadow);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-sm {
-  font-size: 8px;
-  padding: 6px 10px;
-}
-
-.btn-primary {
-  border-color: var(--pixel-primary);
-  color: var(--pixel-primary);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--pixel-primary);
-  color: var(--pixel-bg);
-}
-
-.btn-success {
-  border-color: var(--pixel-success);
-  color: var(--pixel-success);
-}
-
-.btn-success:hover:not(:disabled) {
-  background: var(--pixel-success);
-  color: var(--pixel-bg);
-}
-
-.btn-cancel {
-  border-color: var(--pixel-border);
-  color: var(--pixel-text-secondary);
-}
-
-.btn-cancel:hover:not(:disabled) {
-  border-color: var(--pixel-text-secondary);
-  color: var(--pixel-text);
-}
-
 /* ===== Pixel Input ===== */
 .pixel-input {
   font-family: var(--font-pixel), 'Ark Pixel', 'Press Start 2P', monospace;
@@ -366,9 +368,9 @@ onMounted(loadTags)
   border: 3px solid var(--pixel-border);
   color: var(--pixel-text);
   outline: none;
-  border-radius: 0;
   width: 100%;
   box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.25s ease;
 }
 
 .pixel-input::placeholder {
@@ -378,55 +380,102 @@ onMounted(loadTags)
 
 .pixel-input:focus {
   border-color: var(--pixel-primary);
+  box-shadow: 0 0 0 1px var(--pixel-primary), 0 0 8px rgba(65, 166, 246, 0.15);
 }
 
-/* ===== New Tag Form ===== */
-.new-form {
+/* ===== Form Card (shared for new/edit) ===== */
+.form-card {
   background: var(--pixel-card-bg);
-  padding: 16px;
+  border: 3px solid var(--pixel-border);
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
+}
+
+.form-card.inline-edit {
+  border-color: var(--pixel-primary);
+  grid-column: 1 / -1;
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--pixel-border);
+  background: var(--pixel-bg-secondary);
 }
 
 .form-title {
   font-family: 'Press Start 2P', monospace;
-  font-size: 9px;
+  font-size: 10px;
+  color: var(--pixel-primary);
+  margin: 0;
+}
+
+.close-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--pixel-border);
+  background: var(--pixel-bg);
   color: var(--pixel-text-secondary);
-  margin-bottom: 12px;
-  letter-spacing: 1px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.close-btn:hover {
+  border-color: var(--pixel-accent);
+  color: var(--pixel-accent);
+}
+
+.form-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .form-row {
   display: flex;
   gap: 12px;
-  align-items: center;
+  align-items: flex-end;
 }
 
-.form-row.compact {
-  gap: 8px;
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.field-color {
+  flex: 0 0 150px;
+}
+
+.form-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--pixel-text-secondary);
+  letter-spacing: 0.5px;
 }
 
 .color-picker-wrap {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.color-label {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
-  color: var(--pixel-text-secondary);
-  letter-spacing: 1px;
+  gap: 8px;
 }
 
 .color-input {
-  width: 40px;
+  width: 44px;
   height: 36px;
   padding: 2px;
   background: var(--pixel-bg);
   border: 3px solid var(--pixel-border);
   cursor: pointer;
-  border-radius: 0;
 }
 
 .color-input::-webkit-color-swatch-wrapper {
@@ -435,125 +484,135 @@ onMounted(loadTags)
 
 .color-input::-webkit-color-swatch {
   border: none;
-  border-radius: 0;
+}
+
+.color-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--pixel-text-secondary);
 }
 
 .form-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  padding-top: 4px;
 }
 
-.form-actions.compact {
-  margin-top: 8px;
+/* ===== Tag Grid ===== */
+.tag-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
-/* ===== Tag Cloud ===== */
-.tag-cloud {
+.tag-card {
+  background: var(--pixel-card-bg);
+  border: 3px solid var(--pixel-border);
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-start;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* ===== Tag Badge ===== */
-.tag-badge {
+.tag-card:hover {
+  border-color: var(--pixel-primary);
+  box-shadow: 4px 6px 0 var(--pixel-shadow);
+}
+
+.tag-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
+}
+
+.tag-card.editing {
+  grid-column: 1 / -1;
+  border-color: var(--pixel-primary);
+}
+
+/* Color bar at top of card */
+.card-color-bar {
+  height: 6px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.card-body {
+  padding: 14px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-top {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border: 2px solid var(--pixel-border);
-  border-left: 4px solid;
-  border-radius: 0;
-  font-size: 12px;
-  transition: border-color 0.1s steps(2), box-shadow 0.1s steps(2);
-  min-width: 120px;
-  position: relative;
+  gap: 10px;
 }
 
-.tag-badge:hover {
-  border-color: var(--pixel-text-secondary);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
-}
-
-.tag-badge:hover .tag-actions {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.tag-badge.editing {
-  border-color: var(--pixel-primary);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
-  padding: 10px 14px;
-}
-
-.tag-color-dot {
-  width: 10px;
-  height: 10px;
+.color-dot {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--pixel-border);
 }
 
 .tag-name {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--pixel-text);
-  font-family: var(--font-pixel), 'Ark Pixel', 'Press Start 2P', monospace;
-  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 160px;
 }
 
-/* ===== Tag Actions ===== */
-.tag-actions {
+.color-hex {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--pixel-text-secondary);
+  letter-spacing: 0.5px;
+  padding-left: 24px;
+}
+
+/* Card bottom actions */
+.card-actions {
   display: flex;
-  gap: 4px;
-  margin-left: auto;
-  opacity: 0;
-  transform: translateX(4px);
-  transition: opacity 0.15s steps(3), transform 0.15s steps(3);
+  border-top: 2px solid var(--pixel-border);
 }
 
-.tag-btn {
-  width: 22px;
-  height: 22px;
+.card-action-btn {
+  flex: 1;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--pixel-bg);
-  border: 2px solid var(--pixel-border);
   color: var(--pixel-text-secondary);
   cursor: pointer;
-  font-size: 11px;
+  font-size: 14px;
   padding: 0;
-  border-radius: 0;
-  transition: border-color 0.1s steps(2), color 0.1s steps(2);
+  border: none;
+  border-right: 2px solid var(--pixel-border);
+  transition: color 0.1s ease, background 0.1s ease;
 }
 
-.tag-btn:hover {
-  border-color: var(--pixel-text-secondary);
+.card-action-btn:last-child {
+  border-right: none;
 }
 
-.tag-edit:hover {
+.card-action-btn:hover {
   color: var(--pixel-primary);
-  border-color: var(--pixel-primary);
+  background: var(--pixel-bg-secondary);
 }
 
-.tag-delete:hover {
+.card-action-btn.danger:hover {
   color: var(--pixel-accent);
-  border-color: var(--pixel-accent);
 }
 
-.tag-btn:active {
-  transform: translate(1px, 1px);
-}
-
-/* ===== Inline Edit Form ===== */
-.edit-form-inline {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
+.card-action-btn:active {
+  background: var(--pixel-card-bg);
 }
 
 /* ===== Empty State ===== */
@@ -570,6 +629,7 @@ onMounted(loadTags)
   font-size: 64px;
   color: var(--pixel-border);
   line-height: 1;
+  animation: pixel-float 3s ease-in-out infinite;
 }
 
 .empty-text {
@@ -579,10 +639,15 @@ onMounted(loadTags)
 }
 
 /* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .tag-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 640px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .tag-grid {
+    grid-template-columns: 1fr;
   }
 
   .form-row {
@@ -590,19 +655,13 @@ onMounted(loadTags)
     align-items: stretch;
   }
 
-  .color-picker-wrap {
-    flex-direction: row;
-    gap: 8px;
+  .field-color {
+    flex: 1;
   }
 
-  .tag-badge {
-    min-width: unset;
-    width: 100%;
-  }
-
-  .tag-actions {
-    opacity: 1;
-    transform: translateX(0);
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

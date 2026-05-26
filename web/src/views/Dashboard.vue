@@ -26,7 +26,7 @@ const trendChartRef = ref<HTMLDivElement>()
 const rankChartRef = ref<HTMLDivElement>()
 
 // Pixel theme colors for echarts
-const COLORS = ['#41a6f6', '#b13e53', '#38b764', '#ef7d57', '#73eff7', '#ffcd75', '#5d275d', '#29366f']
+const COLORS = ['#41a6f6', '#b13e53', '#38b764', '#ef7d57', '#73eff7', '#ffcd75', '#5d275d', '#182548']
 
 const statusLabel: Record<string, string> = {
   ACTIVE: '使用中', IDLE: '闲置', RETIRED: '退役', SOLD: '已售', DISCARDED: '已弃',
@@ -38,7 +38,7 @@ const statusColor: Record<string, string> = {
 
 // Pixel chart theme base config
 const pixelTheme = {
-  textStyle: { fontFamily: "'Press Start 2P', 'Ark Pixel', monospace", fontSize: 10, color: '#94b0c2' },
+  textStyle: { fontFamily: "'Press Start 2P', 'Ark Pixel', monospace", fontSize: 10, color: '#7b8faa' },
   title: { textStyle: { fontFamily: "'Press Start 2P', monospace", fontSize: 12, color: '#f4f4f4' } },
   grid: { top: 36, right: 16, bottom: 28, left: 48, containLabel: false },
 }
@@ -80,8 +80,8 @@ function initPieChart() {
     ...pixelTheme,
     tooltip: {
       trigger: 'item',
-      backgroundColor: '#29366f',
-      borderColor: '#566c86',
+      backgroundColor: '#182548',
+      borderColor: '#2e3d62',
       borderWidth: 2,
       textStyle: { color: '#f4f4f4', fontFamily: "'Press Start 2P', monospace", fontSize: 9 },
       formatter: '{b}: {c}件 ({d}%)',
@@ -90,14 +90,14 @@ function initPieChart() {
       type: 'pie',
       radius: ['35%', '65%'],
       center: ['50%', '55%'],
-      itemStyle: { borderColor: '#1a1c2c', borderWidth: 2, borderRadius: 0 },
+      itemStyle: { borderColor: '#0e1225', borderWidth: 2, borderRadius: 0 },
       label: {
-        color: '#94b0c2',
+        color: '#7b8faa',
         fontSize: 9,
         fontFamily: "'Press Start 2P', monospace",
         formatter: '{b}\n{d}%',
       },
-      labelLine: { lineStyle: { color: '#566c86', width: 2 } },
+      labelLine: { lineStyle: { color: '#2e3d62', width: 2 } },
       data: categoryStats.value.map((c, i) => ({
         name: c.category_name,
         value: c.item_count,
@@ -116,23 +116,23 @@ function initTrendChart() {
     ...pixelTheme,
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#29366f',
-      borderColor: '#566c86',
+      backgroundColor: '#182548',
+      borderColor: '#2e3d62',
       borderWidth: 2,
       textStyle: { color: '#f4f4f4', fontFamily: "'Ark Pixel', monospace", fontSize: 11 },
     },
     xAxis: {
       type: 'category',
       data: months,
-      axisLine: { lineStyle: { color: '#566c86', width: 2 } },
+      axisLine: { lineStyle: { color: '#2e3d62', width: 2 } },
       axisTick: { show: false },
-      axisLabel: { color: '#94b0c2', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
+      axisLabel: { color: '#7b8faa', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
     },
     yAxis: {
       type: 'value',
-      splitLine: { lineStyle: { color: '#333c57', type: [4, 4] } },
+      splitLine: { lineStyle: { color: '#141d38', type: [4, 4] } },
       axisLine: { show: false },
-      axisLabel: { color: '#94b0c2', fontSize: 8, fontFamily: "'Ark Pixel', monospace", formatter: '¥{value}' },
+      axisLabel: { color: '#7b8faa', fontSize: 8, fontFamily: "'Ark Pixel', monospace", formatter: '¥{value}' },
     },
     series: [{
       type: 'bar',
@@ -140,7 +140,7 @@ function initTrendChart() {
       itemStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
           { offset: 0, color: '#41a6f6' },
-          { offset: 1, color: '#29366f' },
+          { offset: 1, color: '#182548' },
         ]),
         borderColor: '#41a6f6',
         borderWidth: 1,
@@ -162,22 +162,22 @@ function initRankChart() {
     grid: { ...pixelTheme.grid, left: 72 },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#29366f',
-      borderColor: '#566c86',
+      backgroundColor: '#182548',
+      borderColor: '#2e3d62',
       borderWidth: 2,
       textStyle: { color: '#f4f4f4', fontFamily: "'Ark Pixel', monospace", fontSize: 11 },
       formatter: (p: any) => `${p[0].name}<br/>日均: ¥${p[0].value.toFixed(2)}`,
     },
     xAxis: {
       type: 'value',
-      splitLine: { lineStyle: { color: '#333c57', type: [4, 4] } },
+      splitLine: { lineStyle: { color: '#141d38', type: [4, 4] } },
       axisLine: { show: false },
-      axisLabel: { color: '#94b0c2', fontSize: 8, fontFamily: "'Ark Pixel', monospace", formatter: '¥{value}' },
+      axisLabel: { color: '#7b8faa', fontSize: 8, fontFamily: "'Ark Pixel', monospace", formatter: '¥{value}' },
     },
     yAxis: {
       type: 'category',
       data: names,
-      axisLine: { lineStyle: { color: '#566c86', width: 2 } },
+      axisLine: { lineStyle: { color: '#2e3d62', width: 2 } },
       axisTick: { show: false },
       axisLabel: { color: '#f4f4f4', fontSize: 9, fontFamily: "'Ark Pixel', monospace" },
     },
@@ -189,7 +189,7 @@ function initRankChart() {
           const i = costRank.value.length - 1 - params.dataIndex
           return i < 3 ? '#b13e53' : '#ef7d57'
         },
-        borderColor: '#1a1c2c',
+        borderColor: '#0e1225',
         borderWidth: 1,
         borderRadius: 0,
       },
@@ -227,29 +227,29 @@ onMounted(async () => {
 
     <template v-else>
       <!-- Section: Stats Overview -->
-      <div class="stats-grid">
-        <div class="stat-card">
+      <div class="stats-grid stagger-list">
+        <div class="stat-card pixel-card-hover">
           <div class="stat-icon">◆</div>
           <div class="stat-info">
             <div class="stat-value">{{ overview?.total_items ?? 0 }}</div>
             <div class="stat-label">TOTAL ITEMS</div>
           </div>
         </div>
-        <div class="stat-card accent">
+        <div class="stat-card accent pixel-card-hover">
           <div class="stat-icon">$</div>
           <div class="stat-info">
             <div class="stat-value">{{ formatCurrency(overview?.total_assets_value ?? 0) }}</div>
             <div class="stat-label">ASSETS</div>
           </div>
         </div>
-        <div class="stat-card primary">
+        <div class="stat-card primary pixel-card-hover">
           <div class="stat-icon">◈</div>
           <div class="stat-info">
             <div class="stat-value">{{ formatCurrency(overview?.avg_daily_cost ?? 0) }}</div>
             <div class="stat-label">AVG DAILY</div>
           </div>
         </div>
-        <div class="stat-card success">
+        <div class="stat-card success pixel-card-hover">
           <div class="stat-icon">▶</div>
           <div class="stat-info">
             <div class="stat-value">{{ overview?.active_items ?? 0 }}</div>
@@ -259,16 +259,16 @@ onMounted(async () => {
       </div>
 
       <!-- Section: Charts Row -->
-      <div class="charts-row">
+      <div class="charts-row stagger-list">
         <!-- Category Pie -->
-        <div class="chart-card">
+        <div class="chart-card pixel-card-hover">
           <h3 class="chart-title">CATEGORY</h3>
           <div v-if="categoryStats.length === 0" class="chart-empty">NO DATA</div>
           <div v-else ref="pieChartRef" class="chart-container"></div>
         </div>
 
         <!-- Monthly Trend -->
-        <div class="chart-card wide">
+        <div class="chart-card wide pixel-card-hover">
           <h3 class="chart-title">MONTHLY TREND</h3>
           <div v-if="trends.length === 0" class="chart-empty">NO DATA</div>
           <div v-else ref="trendChartRef" class="chart-container"></div>
@@ -276,9 +276,9 @@ onMounted(async () => {
       </div>
 
       <!-- Section: Bottom Row -->
-      <div class="bottom-row">
+      <div class="bottom-row stagger-list">
         <!-- Daily Cost Rank -->
-        <div class="chart-card">
+        <div class="chart-card pixel-card-hover">
           <h3 class="chart-title">DAILY COST TOP</h3>
           <div v-if="costRank.length === 0" class="chart-empty">NO DATA</div>
           <div v-else ref="rankChartRef" class="chart-container rank-chart"></div>
@@ -287,7 +287,7 @@ onMounted(async () => {
         <!-- Right Column: Alerts + Recent -->
         <div class="side-column">
           <!-- Warranty Alerts -->
-          <div class="info-card">
+          <div class="info-card pixel-card-hover">
             <h3 class="chart-title">
               <span class="title-icon">!</span>
               WARRANTY ALERTS
@@ -298,7 +298,7 @@ onMounted(async () => {
             <div v-else class="alert-list">
               <div
                 v-for="alert in warrantyAlerts" :key="alert.id"
-                class="alert-item"
+                class="alert-item pixel-card-hover"
                 @click="goToItem(alert.id)"
               >
                 <span class="alert-name">{{ alert.name }}</span>
@@ -310,7 +310,7 @@ onMounted(async () => {
           </div>
 
           <!-- Recent Items -->
-          <div class="info-card">
+          <div class="info-card pixel-card-hover">
             <h3 class="chart-title">
               <span class="title-icon">★</span>
               RECENT ITEMS
@@ -321,7 +321,7 @@ onMounted(async () => {
             <div v-else class="recent-list">
               <div
                 v-for="item in recentItems" :key="item.id"
-                class="recent-item"
+                class="recent-item pixel-card-hover"
                 @click="goToItem(item.id)"
               >
                 <div class="recent-left">
@@ -377,11 +377,17 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
-  transition: border-color 0.1s steps(2);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .stat-card:hover {
   border-color: var(--pixel-text-secondary);
+  box-shadow: 4px 6px 0 var(--pixel-shadow);
+}
+
+.stat-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
 }
 
 .stat-card.accent .stat-icon { color: var(--pixel-accent); }
@@ -415,6 +421,7 @@ onMounted(async () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  animation: pixel-count-up 0.4s ease-out;
 }
 
 .stat-label {
@@ -443,6 +450,11 @@ onMounted(async () => {
   border: 3px solid var(--pixel-border);
   padding: 16px;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chart-card:hover {
+  box-shadow: 4px 6px 0 var(--pixel-shadow);
 }
 
 .chart-card.wide {
@@ -495,6 +507,11 @@ onMounted(async () => {
   padding: 16px;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
   flex: 1;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.info-card:hover {
+  border-color: var(--pixel-text-secondary);
 }
 
 .empty-hint {
@@ -522,7 +539,7 @@ onMounted(async () => {
   background: var(--pixel-bg);
   border: 2px solid var(--pixel-border);
   cursor: pointer;
-  transition: border-color 0.1s steps(2);
+  transition: border-color 0.12s ease, transform 0.12s ease, background 0.12s ease;
 }
 
 .alert-item:hover {
@@ -564,7 +581,7 @@ onMounted(async () => {
   background: var(--pixel-bg);
   border: 2px solid var(--pixel-border);
   cursor: pointer;
-  transition: border-color 0.1s steps(2);
+  transition: border-color 0.12s ease, transform 0.12s ease, background 0.12s ease;
 }
 
 .recent-item:hover {

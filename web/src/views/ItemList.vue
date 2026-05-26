@@ -145,7 +145,7 @@ onMounted(() => {
         <span class="title-icon">◆</span>
         <span>物品列表</span>
       </h1>
-      <button class="add-btn" @click="goToAddItem">
+      <button class="add-btn pixel-btn-glow" @click="goToAddItem">
         <span>+ 添加物品</span>
       </button>
     </div>
@@ -215,15 +215,15 @@ onMounted(() => {
     <div v-else-if="items.length === 0" class="empty-state">
       <span class="empty-icon">▢</span>
       <p class="empty-text">还没有物品</p>
-      <button class="add-btn" @click="goToAddItem">添加物品</button>
+      <button class="add-btn pixel-btn-glow" @click="goToAddItem">添加物品</button>
     </div>
 
     <!-- Item Grid -->
-    <div v-else class="item-grid">
+    <div v-else class="item-grid stagger-list">
       <div
         v-for="item in items"
         :key="item.id"
-        class="item-card"
+        class="item-card pixel-card-hover"
         @click="goToItem(item.id)"
       >
         <!-- Thumbnail -->
@@ -349,12 +349,12 @@ onMounted(() => {
   padding: 10px 16px;
   cursor: pointer;
   box-shadow: 3px 3px 0 var(--pixel-shadow);
-  transition: none;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .add-btn:hover {
   background: #4ecdc4;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4), 0 0 8px rgba(65, 166, 246, 0.3);
 }
 
 .add-btn:active {
@@ -408,7 +408,8 @@ onMounted(() => {
 
 .pixel-input:focus {
   border-color: var(--pixel-primary);
-  box-shadow: 0 0 0 1px var(--pixel-primary);
+  transition: border-color 0.15s ease, box-shadow 0.25s ease;
+  box-shadow: 0 0 0 1px var(--pixel-primary), 0 0 8px rgba(65, 166, 246, 0.15);
 }
 
 .pixel-input::placeholder {
@@ -505,6 +506,7 @@ onMounted(() => {
   font-size: 64px;
   color: var(--pixel-border);
   line-height: 1;
+  animation: pixel-float 3s ease-in-out infinite;
 }
 
 .empty-text {
@@ -555,7 +557,7 @@ onMounted(() => {
   border: 3px solid var(--pixel-border);
   cursor: pointer;
   box-shadow: 3px 3px 0 var(--pixel-shadow);
-  transition: border-color 0.1s steps(2), box-shadow 0.1s steps(2);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -563,7 +565,7 @@ onMounted(() => {
 
 .item-card:hover {
   border-color: var(--pixel-primary);
-  box-shadow: 4px 4px 0 var(--pixel-shadow);
+  box-shadow: 4px 6px 0 var(--pixel-shadow);
 }
 
 .item-card:active {
@@ -632,6 +634,7 @@ onMounted(() => {
   white-space: nowrap;
   flex-shrink: 0;
   line-height: 1.4;
+  transition: color 0.12s ease, border-color 0.12s ease;
 }
 
 /* --- Card Stats --- */

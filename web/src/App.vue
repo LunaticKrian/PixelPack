@@ -12,6 +12,10 @@ const layout = computed(() => {
 
 <template>
   <component :is="layout">
-    <router-view />
+    <router-view v-slot="{ Component, route: currentRoute }">
+      <transition name="route" mode="out-in">
+        <component :is="Component" :key="currentRoute.path" />
+      </transition>
+    </router-view>
   </component>
 </template>

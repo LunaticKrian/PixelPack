@@ -34,7 +34,7 @@ function toggleSidebar() {
       <div class="sidebar-header">
         <div class="logo" v-if="sidebarOpen">
           <span class="logo-bracket">[</span>
-          <span class="logo-text">DS</span>
+          <span class="logo-text animate-text-glow">DS</span>
           <span class="logo-bracket">]</span>
         </div>
         <button class="pixel-icon-btn" @click="toggleSidebar" :title="sidebarOpen ? '收起' : '展开'">
@@ -47,12 +47,12 @@ function toggleSidebar() {
           v-for="item in navItems"
           :key="item.path"
           :to="item.path"
-          class="nav-item"
+          class="nav-item pixel-nav-hover"
           :class="{ active: $route.path === item.path || (item.path !== '/' && $route.path.startsWith(item.path)) }"
         >
           <span class="nav-icon">{{ item.icon }}</span>
           <span class="nav-label" v-if="sidebarOpen">{{ item.label }}</span>
-          <span class="nav-cursor" v-if="$route.path === item.path">◄</span>
+          <span class="nav-cursor" v-if="$route.path === item.path || (item.path !== '/' && $route.path.startsWith(item.path))">◄</span>
         </router-link>
       </nav>
 
@@ -61,7 +61,7 @@ function toggleSidebar() {
           <span class="user-icon">☺</span>
           <span class="user-name">{{ auth.user?.username }}</span>
         </div>
-        <button class="logout-btn" @click="handleLogout">
+        <button class="logout-btn pixel-btn-glow" @click="handleLogout">
           <span class="logout-icon">⏻</span>
           <span>退出</span>
         </button>
@@ -69,13 +69,14 @@ function toggleSidebar() {
     </aside>
 
     <!-- Main Content -->
-    <div class="main-area">
+    <div class="main-area pixel-grid-texture">
       <header class="top-bar">
         <div class="breadcrumb">
           <span class="bc-prefix">~</span>
           <span class="bc-path">/{{ $route.name }}</span>
         </div>
         <div class="top-bar-right">
+          <span class="insert-coin-mini">INSERT COIN</span>
           <span class="hp-bar">
             <span class="hp-label">HP</span>
             <span class="hp-fill" :style="{ width: '100%' }"></span>
@@ -119,8 +120,9 @@ function toggleSidebar() {
   border-right: 3px solid var(--pixel-border);
   display: flex;
   flex-direction: column;
-  transition: width 0.15s steps(3);
+  transition: width 0.2s ease;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .sidebar.collapsed {
@@ -161,6 +163,7 @@ function toggleSidebar() {
   font-size: 16px;
   padding: 4px;
   font-family: var(--font-pixel);
+  transition: color 0.12s ease;
 }
 
 .pixel-icon-btn:hover {
@@ -184,18 +187,38 @@ function toggleSidebar() {
   color: var(--pixel-text-secondary);
   text-decoration: none;
   font-size: 14px;
-  transition: all 0.1s steps(2);
   position: relative;
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: var(--pixel-primary);
+  transition: height 0.15s ease;
 }
 
 .nav-item:hover {
   color: var(--pixel-text);
-  background: rgba(60, 187, 177, 0.08);
+  background: rgba(65, 166, 246, 0.06);
+}
+
+.nav-item:hover::before {
+  height: 60%;
 }
 
 .nav-item.active {
   color: var(--pixel-primary);
-  background: rgba(60, 187, 177, 0.12);
+  background: rgba(65, 166, 246, 0.1);
+}
+
+.nav-item.active::before {
+  height: 80%;
+  background: var(--pixel-primary);
 }
 
 .nav-icon {
@@ -203,10 +226,22 @@ function toggleSidebar() {
   width: 24px;
   text-align: center;
   flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.nav-item:hover .nav-icon {
+  transform: scale(1.15);
+}
+
+.nav-item.active .nav-icon {
+  transform: scale(1.2);
 }
 
 .nav-label {
   flex: 1;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .nav-cursor {
@@ -245,6 +280,7 @@ function toggleSidebar() {
   display: flex;
   align-items: center;
   gap: 4px;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .logout-btn:hover {
@@ -289,6 +325,21 @@ function toggleSidebar() {
   color: var(--pixel-text);
 }
 
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.insert-coin-mini {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--pixel-warning);
+  animation: pixel-blink 1.5s step-end infinite;
+  letter-spacing: 1px;
+  opacity: 0.6;
+}
+
 /* HP bar - decorative RPG element */
 .hp-bar {
   display: flex;
@@ -306,8 +357,8 @@ function toggleSidebar() {
   width: 60px;
   height: 8px;
   background: var(--pixel-success);
-  box-shadow: 0 0 6px rgba(107, 203, 119, 0.4);
-  transition: width 0.3s steps(4);
+  box-shadow: 0 0 6px rgba(56, 183, 100, 0.3);
+  transition: width 0.3s ease;
 }
 
 .content-area {
