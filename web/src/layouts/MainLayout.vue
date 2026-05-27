@@ -6,11 +6,7 @@ const router = useRouter()
 const auth = useAuthStore()
 
 const navItems = [
-  { path: '/', label: '仪表盘', icon: '◈' },
-  { path: '/items', label: '物品', icon: '◆' },
-  { path: '/categories', label: '分类', icon: '▦' },
-  { path: '/tags', label: '标签', icon: '◎' },
-  { path: '/stats', label: '统计', icon: '▤' },
+  { path: '/', label: '角色信息', icon: '◈' },
 ]
 
 function handleLogout() {

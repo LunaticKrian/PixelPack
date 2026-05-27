@@ -1,61 +1,47 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import * as echarts from 'echarts'
 import {
-  getOverview, getByCategory, getDailyCostRank, getTrends,
-  getWarrantyAlerts, getRecentItems,
-  type OverviewStats, type CategoryStat, type DailyCostRankItem,
-  type MonthlyTrendPoint, type WarrantyAlert, type RecentItem,
+  getOverview, getRecentItems, getWarrantyAlerts,
+  type OverviewStats, type RecentItem, type WarrantyAlert,
 } from '../api/stats'
-import { formatCurrency } from '../utils/format'
+import { formatCurrency, formatDays } from '../utils/format'
 
 const router = useRouter()
 
 const loading = ref(true)
 const overview = ref<OverviewStats | null>(null)
-const categoryStats = ref<CategoryStat[]>([])
-const costRank = ref<DailyCostRankItem[]>([])
-const trends = ref<MonthlyTrendPoint[]>([])
-const warrantyAlerts = ref<WarrantyAlert[]>([])
 const recentItems = ref<RecentItem[]>([])
-
-// Chart refs
-const pieChartRef = ref<HTMLDivElement>()
-const trendChartRef = ref<HTMLDivElement>()
-const rankChartRef = ref<HTMLDivElement>()
-
-// Pixel theme colors for echarts
-const COLORS = ['#41a6f6', '#b13e53', '#38b764', '#ef7d57', '#73eff7', '#ffcd75', '#5d275d', '#182548']
+const warrantyAlerts = ref<WarrantyAlert[]>([])
 
 const statusLabel: Record<string, string> = {
   ACTIVE: '使用中', IDLE: '闲置', RETIRED: '退役', SOLD: '已售', DISCARDED: '已弃',
 }
-const statusColor: Record<string, string> = {
-  ACTIVE: 'var(--pixel-success)', IDLE: 'var(--pixel-warning)', RETIRED: 'var(--pixel-text-secondary)',
-  SOLD: 'var(--pixel-primary)', DISCARDED: 'var(--pixel-accent)',
-}
 
-// Pixel chart theme base config
-const pixelTheme = {
-  textStyle: { fontFamily: "'Press Start 2P', 'Ark Pixel', monospace", fontSize: 10, color: '#7b8faa' },
-  title: { textStyle: { fontFamily: "'Press Start 2P', monospace", fontSize: 12, color: '#f4f4f4' } },
-  grid: { top: 36, right: 16, bottom: 28, left: 48, containLabel: false },
-}
+// RPG stat mappings
+const level = computed(() => overview.value?.total_items ?? 0)
+const gold = computed(() => overview.value?.total_assets_value ?? 0)
+const activeCount = computed(() => overview.value?.active_items ?? 0)
+const totalItems = computed(() => overview.value?.total_items ?? 1)
+const hpPercent = computed(() => totalItems > 0 ? Math.round((activeCount / totalItems) * 100) : 0)
+const idleCount = computed(() => totalItems - activeCount)
+const mpPercent = computed(() => totalItems > 0 ? Math.min(100, Math.round((idleCount / totalItems) * 100)) : 0)
+const expPercent = computed(() => {
+  if (!overview.value) return 0
+  return Math.min(100, Math.round((overview.value.avg_daily_cost / 10) * 100))
+})
 
 async function loadAll() {
   loading.value = true
   try {
-    const [ov, cat, rank, trend, warranty, recent] = await Promise.all([
-      getOverview(), getByCategory(), getDailyCostRank(8),
-      getTrends(), getWarrantyAlerts(30), getRecentItems(5),
+    const [ov, recent, warranty] = await Promise.all([
+      getOverview(),
+      getRecentItems(5),
+      getWarrantyAlerts(30),
     ])
     overview.value = ov
-    categoryStats.value = cat
-    costRank.value = rank
-    trends.value = trend
-    warrantyAlerts.value = warranty
     recentItems.value = recent
+    warrantyAlerts.value = warranty
   } catch (e) {
     console.error('Dashboard load error', e)
   } finally {
@@ -63,158 +49,15 @@ async function loadAll() {
   }
 }
 
-function initCharts() {
-  if (!loading.value) {
-    setTimeout(() => {
-      initPieChart()
-      initTrendChart()
-      initRankChart()
-    }, 50)
-  }
-}
-
-function initPieChart() {
-  if (!pieChartRef.value || categoryStats.value.length === 0) return
-  const chart = echarts.init(pieChartRef.value)
-  chart.setOption({
-    ...pixelTheme,
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: '#182548',
-      borderColor: '#2e3d62',
-      borderWidth: 2,
-      textStyle: { color: '#f4f4f4', fontFamily: "'Press Start 2P', monospace", fontSize: 9 },
-      formatter: '{b}: {c}件 ({d}%)',
-    },
-    series: [{
-      type: 'pie',
-      radius: ['35%', '65%'],
-      center: ['50%', '55%'],
-      itemStyle: { borderColor: '#0e1225', borderWidth: 2, borderRadius: 0 },
-      label: {
-        color: '#7b8faa',
-        fontSize: 9,
-        fontFamily: "'Press Start 2P', monospace",
-        formatter: '{b}\n{d}%',
-      },
-      labelLine: { lineStyle: { color: '#2e3d62', width: 2 } },
-      data: categoryStats.value.map((c, i) => ({
-        name: c.category_name,
-        value: c.item_count,
-        itemStyle: { color: c.color || COLORS[i % COLORS.length] },
-      })),
-    }],
-  })
-  window.addEventListener('resize', () => chart.resize())
-}
-
-function initTrendChart() {
-  if (!trendChartRef.value || trends.value.length === 0) return
-  const chart = echarts.init(trendChartRef.value)
-  const months = trends.value.map(t => t.month.slice(5))
-  chart.setOption({
-    ...pixelTheme,
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: '#182548',
-      borderColor: '#2e3d62',
-      borderWidth: 2,
-      textStyle: { color: '#f4f4f4', fontFamily: "'Ark Pixel', monospace", fontSize: 11 },
-    },
-    xAxis: {
-      type: 'category',
-      data: months,
-      axisLine: { lineStyle: { color: '#2e3d62', width: 2 } },
-      axisTick: { show: false },
-      axisLabel: { color: '#7b8faa', fontSize: 8, fontFamily: "'Press Start 2P', monospace" },
-    },
-    yAxis: {
-      type: 'value',
-      splitLine: { lineStyle: { color: '#141d38', type: [4, 4] } },
-      axisLine: { show: false },
-      axisLabel: { color: '#7b8faa', fontSize: 8, fontFamily: "'Ark Pixel', monospace", formatter: '¥{value}' },
-    },
-    series: [{
-      type: 'bar',
-      data: trends.value.map(t => t.spending),
-      itemStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: '#41a6f6' },
-          { offset: 1, color: '#182548' },
-        ]),
-        borderColor: '#41a6f6',
-        borderWidth: 1,
-        borderRadius: 0,
-      },
-      barWidth: '50%',
-    }],
-  })
-  window.addEventListener('resize', () => chart.resize())
-}
-
-function initRankChart() {
-  if (!rankChartRef.value || costRank.value.length === 0) return
-  const chart = echarts.init(rankChartRef.value)
-  const names = costRank.value.map(c => c.name.length > 6 ? c.name.slice(0, 6) + '..' : c.name).reverse()
-  const values = costRank.value.map(c => c.daily_cost).reverse()
-  chart.setOption({
-    ...pixelTheme,
-    grid: { ...pixelTheme.grid, left: 72 },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: '#182548',
-      borderColor: '#2e3d62',
-      borderWidth: 2,
-      textStyle: { color: '#f4f4f4', fontFamily: "'Ark Pixel', monospace", fontSize: 11 },
-      formatter: (p: any) => `${p[0].name}<br/>日均: ¥${p[0].value.toFixed(2)}`,
-    },
-    xAxis: {
-      type: 'value',
-      splitLine: { lineStyle: { color: '#141d38', type: [4, 4] } },
-      axisLine: { show: false },
-      axisLabel: { color: '#7b8faa', fontSize: 8, fontFamily: "'Ark Pixel', monospace", formatter: '¥{value}' },
-    },
-    yAxis: {
-      type: 'category',
-      data: names,
-      axisLine: { lineStyle: { color: '#2e3d62', width: 2 } },
-      axisTick: { show: false },
-      axisLabel: { color: '#f4f4f4', fontSize: 9, fontFamily: "'Ark Pixel', monospace" },
-    },
-    series: [{
-      type: 'bar',
-      data: values,
-      itemStyle: {
-        color: (params: any) => {
-          const i = costRank.value.length - 1 - params.dataIndex
-          return i < 3 ? '#b13e53' : '#ef7d57'
-        },
-        borderColor: '#0e1225',
-        borderWidth: 1,
-        borderRadius: 0,
-      },
-      barWidth: '55%',
-      label: {
-        show: true,
-        position: 'right',
-        color: '#f4f4f4',
-        fontSize: 9,
-        fontFamily: "'Ark Pixel', monospace",
-        formatter: (p: any) => '¥' + p.value.toFixed(2),
-      },
-    }],
-  })
-  window.addEventListener('resize', () => chart.resize())
-}
-
 function goToItem(id: number) {
   router.push(`/items/${id}`)
 }
 
-onMounted(async () => {
-  await loadAll()
-  initCharts()
-})
+function goToItems() {
+  router.push('/items')
+}
+
+onMounted(loadAll)
 </script>
 
 <template>
@@ -225,118 +68,165 @@ onMounted(async () => {
       <span class="loading-text">加载中...</span>
     </div>
 
-    <template v-else>
-      <!-- Section: Stats Overview -->
-      <div class="stats-grid stagger-list">
-        <div class="stat-card pixel-card-hover">
-          <div class="stat-icon">◆</div>
-          <div class="stat-info">
-            <div class="stat-value">{{ overview?.total_items ?? 0 }}</div>
-            <div class="stat-label">物品总数</div>
-          </div>
-        </div>
-        <div class="stat-card accent pixel-card-hover">
-          <div class="stat-icon">$</div>
-          <div class="stat-info">
-            <div class="stat-value">{{ formatCurrency(overview?.total_assets_value ?? 0) }}</div>
-            <div class="stat-label">资产总值</div>
-          </div>
-        </div>
-        <div class="stat-card primary pixel-card-hover">
-          <div class="stat-icon">◈</div>
-          <div class="stat-info">
-            <div class="stat-value">{{ formatCurrency(overview?.avg_daily_cost ?? 0) }}</div>
-            <div class="stat-label">日均成本</div>
-          </div>
-        </div>
-        <div class="stat-card success pixel-card-hover">
-          <div class="stat-icon">▶</div>
-          <div class="stat-info">
-            <div class="stat-value">{{ overview?.active_items ?? 0 }}</div>
-            <div class="stat-label">使用中</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section: Charts Row -->
-      <div class="charts-row stagger-list">
-        <!-- Category Pie -->
-        <div class="chart-card pixel-card-hover">
-          <h3 class="chart-title">分类统计</h3>
-          <div v-if="categoryStats.length === 0" class="chart-empty">暂无数据</div>
-          <div v-else ref="pieChartRef" class="chart-container"></div>
-        </div>
-
-        <!-- Monthly Trend -->
-        <div class="chart-card wide pixel-card-hover">
-          <h3 class="chart-title">月度趋势</h3>
-          <div v-if="trends.length === 0" class="chart-empty">暂无数据</div>
-          <div v-else ref="trendChartRef" class="chart-container"></div>
-        </div>
-      </div>
-
-      <!-- Section: Bottom Row -->
-      <div class="bottom-row stagger-list">
-        <!-- Daily Cost Rank -->
-        <div class="chart-card pixel-card-hover">
-          <h3 class="chart-title">日均成本排行</h3>
-          <div v-if="costRank.length === 0" class="chart-empty">暂无数据</div>
-          <div v-else ref="rankChartRef" class="chart-container rank-chart"></div>
-        </div>
-
-        <!-- Right Column: Alerts + Recent -->
-        <div class="side-column">
-          <!-- Warranty Alerts -->
-          <div class="info-card pixel-card-hover">
-            <h3 class="chart-title">
-              <span class="title-icon">!</span>
-              保修提醒
-            </h3>
-            <div v-if="warrantyAlerts.length === 0" class="empty-hint">
-              <span>暂无提醒</span>
+    <div v-else class="main-layout">
+      <!-- ====== LEFT: Character Panel ====== -->
+      <div class="char-panel pixel-border">
+        <!-- Top: Left (Portrait) + Right (Info/Stats/Bars) -->
+        <div class="char-top-row">
+          <!-- Left: Portrait -->
+          <div class="char-portrait-col">
+            <div class="portrait-frame">
+              <div class="portrait-inner">
+                <div class="portrait-placeholder">
+                  <img src="/img/portrait.png" alt="Character Portrait" class="portrait-img" />
+                </div>
+              </div>
+              <div class="portrait-deco top-left"></div>
+              <div class="portrait-deco top-right"></div>
+              <div class="portrait-deco bottom-left"></div>
+              <div class="portrait-deco bottom-right"></div>
             </div>
-            <div v-else class="alert-list">
-              <div
-                v-for="alert in warrantyAlerts" :key="alert.id"
-                class="alert-item pixel-card-hover"
-                @click="goToItem(alert.id)"
-              >
-                <span class="alert-name">{{ alert.name }}</span>
-                <span class="alert-days" :class="{ urgent: alert.days_remaining <= 7 }">
-                  {{ alert.days_remaining }}天
+          </div>
+          <!-- Right: Info + Stats + Bars -->
+          <div class="char-data-col">
+            <div class="char-info">
+              <div class="char-name">冒险者 {{ 'Krian' }}</div>
+              <div class="char-level">Lv.{{ level }}</div>
+              <div class="char-class">物品管理者</div>
+            </div>
+
+            <div class="char-stats">
+              <div class="stat-row-inline">
+                <span class="stat-icon-gold">◆</span>
+                <span class="stat-label">金币</span>
+                <span class="stat-value-gold">{{ formatCurrency(gold) }}</span>
+              </div>
+              <div class="stat-row-inline">
+                <span class="stat-icon-item">◈</span>
+                <span class="stat-label">物品</span>
+                <span class="stat-value">{{ totalItems }}件</span>
+              </div>
+              <div class="stat-row-inline">
+                <span class="stat-icon-cost">▶</span>
+                <span class="stat-label">日均</span>
+                <span class="stat-value">{{ formatCurrency(overview?.avg_daily_cost ?? 0) }}</span>
+              </div>
+            </div>
+
+            <div class="stat-bars">
+              <div class="bar-group">
+                <div class="bar-header">
+                  <span class="bar-label">HP</span>
+                  <span class="bar-value">{{ activeCount }}/{{ totalItems }}</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill hp" :style="{ width: hpPercent + '%' }"></div>
+                </div>
+                <div class="bar-sub">活跃物品</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-header">
+                  <span class="bar-label">MP</span>
+                  <span class="bar-value">{{ idleCount }}/{{ totalItems }}</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill mp" :style="{ width: mpPercent + '%' }"></div>
+                </div>
+                <div class="bar-sub">闲置物品</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-header">
+                  <span class="bar-label">EXP</span>
+                  <span class="bar-value">{{ expPercent }}%</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill exp" :style="{ width: expPercent + '%' }"></div>
+                </div>
+                <div class="bar-sub">日均消费指数</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quest Slots (Placeholder) -->
+        <div class="quest-section">
+          <div class="section-label">
+            <span class="label-icon">▣</span>
+            <span>任务进度</span>
+            <span class="coming-soon">即将开放</span>
+          </div>
+          <div class="quest-grid">
+            <div v-for="i in 5" :key="i" class="quest-slot">
+              <span class="quest-icon">?</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== RIGHT: System Menu + Info ====== -->
+      <div class="side-panel">
+        <!-- System Menu -->
+        <div class="menu-section pixel-border">
+          <div class="section-header">
+            <span class="section-icon">▤</span>
+            <span>系统菜单</span>
+          </div>
+          <div class="menu-grid">
+            <button class="menu-btn primary" @click="goToItems">
+              <span class="menu-icon">◆</span>
+              <span class="menu-label">背包</span>
+              <span class="menu-sub">物品管理</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Items -->
+        <div class="info-section pixel-border">
+          <div class="section-header">
+            <span class="section-icon">★</span>
+            <span>最近获取</span>
+          </div>
+          <div v-if="recentItems.length === 0" class="empty-hint">暂无物品</div>
+          <div v-else class="recent-list">
+            <div
+              v-for="item in recentItems"
+              :key="item.id"
+              class="recent-item"
+              @click="goToItem(item.id)"
+            >
+              <div class="recent-left">
+                <span class="recent-name">{{ item.name }}</span>
+                <span class="recent-status" :class="item.status.toLowerCase()">
+                  {{ statusLabel[item.status] || item.status }}
                 </span>
               </div>
+              <span class="recent-cost">{{ formatCurrency(item.daily_cost) }}/天</span>
             </div>
           </div>
+        </div>
 
-          <!-- Recent Items -->
-          <div class="info-card pixel-card-hover">
-            <h3 class="chart-title">
-              <span class="title-icon">★</span>
-              最近物品
-            </h3>
-            <div v-if="recentItems.length === 0" class="empty-hint">
-              <span>暂无物品</span>
-            </div>
-            <div v-else class="recent-list">
-              <div
-                v-for="item in recentItems" :key="item.id"
-                class="recent-item pixel-card-hover"
-                @click="goToItem(item.id)"
-              >
-                <div class="recent-left">
-                  <span class="recent-name">{{ item.name }}</span>
-                  <span class="recent-status" :style="{ color: statusColor[item.status] }">
-                    {{ statusLabel[item.status] || item.status }}
-                  </span>
-                </div>
-                <span class="recent-cost">{{ formatCurrency(item.daily_cost) }}/天</span>
-              </div>
+        <!-- Warranty Alerts -->
+        <div class="info-section pixel-border">
+          <div class="section-header">
+            <span class="section-icon alert">!</span>
+            <span>保修提醒</span>
+          </div>
+          <div v-if="warrantyAlerts.length === 0" class="empty-hint">暂无提醒</div>
+          <div v-else class="alert-list">
+            <div
+              v-for="alert in warrantyAlerts.slice(0, 5)"
+              :key="alert.id"
+              class="alert-item"
+              :class="{ urgent: alert.days_remaining <= 7 }"
+              @click="goToItem(alert.id)"
+            >
+              <span class="alert-name">{{ alert.name }}</span>
+              <span class="alert-days">{{ alert.days_remaining }}天</span>
             </div>
           </div>
         </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -344,7 +234,7 @@ onMounted(async () => {
 .dashboard-page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  min-height: 100%;
 }
 
 .loading-state {
@@ -362,215 +252,374 @@ onMounted(async () => {
   color: var(--pixel-text-secondary);
 }
 
-/* ===== Stats Grid ===== */
-.stats-grid {
+/* ===== Main Layout: Left + Right ===== */
+.main-layout {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+  align-items: start;
 }
 
-.stat-card {
+/* ===== Character Panel (Left) ===== */
+.char-panel {
   background: var(--pixel-card-bg);
-  border: 3px solid var(--pixel-border);
-  padding: 20px;
+  padding: 24px;
   display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.stat-card:hover {
-  border-color: var(--pixel-text-secondary);
-  box-shadow: 4px 6px 0 var(--pixel-shadow);
+/* Top Row: Portrait | Data */
+.char-top-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  align-items: start;
 }
 
-.stat-card:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--pixel-shadow);
+.char-portrait-col {
+  display: flex;
+  justify-content: center;
 }
 
-.stat-card.accent .stat-icon { color: var(--pixel-accent); }
-.stat-card.primary .stat-icon { color: var(--pixel-primary); }
-.stat-card.success .stat-icon { color: var(--pixel-success); }
+.portrait-frame {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 10 / 13;
+  border: 3px solid var(--pixel-primary);
+  background: var(--pixel-bg);
+  box-shadow: 3px 3px 0 var(--pixel-shadow), inset 0 0 0 3px var(--pixel-bg), inset 0 0 0 6px var(--pixel-border);
+}
 
-.stat-icon {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 24px;
-  color: var(--pixel-primary);
-  width: 48px;
-  height: 48px;
+.portrait-inner {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--pixel-border);
-  background: var(--pixel-bg);
-  flex-shrink: 0;
+  padding: 6px;
 }
 
-.stat-info {
-  flex: 1;
+.portrait-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pixel-bg-secondary);
+  border: 2px dashed var(--pixel-border);
+}
+
+.portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.portrait-deco {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--pixel-primary);
+  background: var(--pixel-bg);
+}
+
+.portrait-deco.top-left { top: -4px; left: -4px; border-right: none; border-bottom: none; }
+.portrait-deco.top-right { top: -4px; right: -4px; border-left: none; border-bottom: none; }
+.portrait-deco.bottom-left { bottom: -4px; left: -4px; border-right: none; border-top: none; }
+.portrait-deco.bottom-right { bottom: -4px; right: -4px; border-left: none; border-top: none; }
+
+.char-data-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   min-width: 0;
 }
 
-.stat-value {
-  font-family: 'Ark Pixel', 'Press Start 2P', monospace;
-  font-size: 18px;
-  color: var(--pixel-text);
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  animation: pixel-count-up 0.4s ease-out;
+.char-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.stat-label {
+.char-name {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--pixel-primary);
+  text-shadow: 0 0 8px rgba(65, 166, 246, 0.3);
+}
+
+.char-level {
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  color: var(--pixel-text-secondary);
+  font-size: 12px;
+  color: var(--pixel-warning);
   letter-spacing: 1px;
+}
+
+.char-class {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 13px;
+  color: var(--pixel-text-secondary);
+  border: 2px solid var(--pixel-border);
+  padding: 3px 10px;
+  background: var(--pixel-bg);
+  display: inline-block;
   margin-top: 4px;
 }
 
-/* ===== Charts ===== */
-.charts-row {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 16px;
-}
-
-.bottom-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.chart-card {
-  background: var(--pixel-card-bg);
-  border: 3px solid var(--pixel-border);
-  padding: 16px;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.chart-card:hover {
-  box-shadow: 4px 6px 0 var(--pixel-shadow);
-}
-
-.chart-card.wide {
-  /* already handled by grid */
-}
-
-.chart-title {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  color: var(--pixel-text-secondary);
-  margin: 0 0 12px;
+/* Stats Row */
+.char-stats {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--pixel-border);
 }
 
-.title-icon {
+.stat-row-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stat-icon-gold { color: var(--pixel-warning); font-size: 14px; width: 18px; text-align: center; }
+.stat-icon-item { color: var(--pixel-primary); font-size: 14px; width: 18px; text-align: center; }
+.stat-icon-cost { color: var(--pixel-success); font-size: 14px; width: 18px; text-align: center; }
+
+.stat-label {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 12px;
+  color: var(--pixel-text-secondary);
+  width: 36px;
+}
+
+.stat-value {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 13px;
+  color: var(--pixel-text);
+  font-weight: 600;
+}
+
+.stat-value-gold {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 13px;
   color: var(--pixel-warning);
+  font-weight: 700;
 }
 
-.chart-container {
-  width: 100%;
-  height: 220px;
-}
-
-.rank-chart {
-  height: 260px;
-}
-
-.chart-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 220px;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  color: var(--pixel-border);
-}
-
-/* ===== Side Column ===== */
-.side-column {
+/* Stat Bars */
+.stat-bars {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
-.info-card {
-  background: var(--pixel-card-bg);
-  border: 3px solid var(--pixel-border);
-  padding: 16px;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
-  flex: 1;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.info-card:hover {
-  border-color: var(--pixel-text-secondary);
-}
-
-.empty-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 9px;
-  color: var(--pixel-border);
-}
-
-/* Warranty alerts */
-.alert-list {
+.bar-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
-.alert-item {
+.bar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
-  background: var(--pixel-bg);
-  border: 2px solid var(--pixel-border);
-  cursor: pointer;
-  transition: border-color 0.12s ease, transform 0.12s ease, background 0.12s ease;
 }
 
-.alert-item:hover {
-  border-color: var(--pixel-warning);
-}
-
-.alert-name {
-  font-size: 12px;
-  color: var(--pixel-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 60%;
-}
-
-.alert-days {
+.bar-label {
   font-family: 'Press Start 2P', monospace;
   font-size: 9px;
-  color: var(--pixel-warning);
+  letter-spacing: 1px;
 }
 
-.alert-days.urgent {
+.bar-group:nth-child(1) .bar-label { color: var(--pixel-success); }
+.bar-group:nth-child(2) .bar-label { color: var(--pixel-info); }
+.bar-group:nth-child(3) .bar-label { color: var(--pixel-warning); }
+
+.bar-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--pixel-text-secondary);
+}
+
+.bar-track {
+  height: 16px;
+  background: var(--pixel-bg);
+  border: 2px solid var(--pixel-border);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.5s ease-out;
+  image-rendering: pixelated;
+}
+
+.bar-fill.hp { background: var(--pixel-success); box-shadow: 0 0 4px rgba(56, 183, 100, 0.3); }
+.bar-fill.mp { background: var(--pixel-info); box-shadow: 0 0 4px rgba(115, 239, 247, 0.3); }
+.bar-fill.exp { background: var(--pixel-warning); box-shadow: 0 0 4px rgba(239, 125, 87, 0.3); }
+
+.bar-sub {
+  font-size: 10px;
+  color: var(--pixel-text-secondary);
+  opacity: 0.6;
+}
+
+/* Quest Section (Placeholder) */
+.quest-section {
+  border-top: 2px dashed var(--pixel-border);
+  padding-top: 16px;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 12px;
+  color: var(--pixel-text-secondary);
+}
+
+.label-icon {
+  color: var(--pixel-primary);
+}
+
+.coming-soon {
+  font-size: 9px;
+  border: 1px solid var(--pixel-border);
+  padding: 1px 6px;
+  color: var(--pixel-border);
+  margin-left: auto;
+}
+
+.quest-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.quest-slot {
+  aspect-ratio: 1;
+  border: 2px dashed var(--pixel-border);
+  background: var(--pixel-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quest-icon {
+  font-size: 20px;
+  color: var(--pixel-border);
+  opacity: 0.5;
+}
+
+/* ===== Side Panel (Right) ===== */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.menu-section,
+.info-section {
+  background: var(--pixel-card-bg);
+  padding: 16px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--pixel-text-secondary);
+  letter-spacing: 0.5px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--pixel-border);
+}
+
+.section-icon {
+  color: var(--pixel-primary);
+  font-size: 12px;
+}
+
+.section-icon.alert {
   color: var(--pixel-accent);
-  animation: pixel-blink 0.8s step-end infinite;
 }
 
-/* Recent items */
+/* Menu Grid */
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.menu-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  background: var(--pixel-bg);
+  border: 3px solid var(--pixel-border);
+  color: var(--pixel-text);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.08s ease;
+}
+
+.menu-btn:hover {
+  border-color: var(--pixel-primary);
+  background: rgba(65, 166, 246, 0.08);
+}
+
+.menu-btn:active {
+  transform: translate(2px, 2px);
+}
+
+.menu-btn.primary {
+  border-color: var(--pixel-primary);
+  background: rgba(65, 166, 246, 0.1);
+}
+
+.menu-btn.primary:hover {
+  background: rgba(65, 166, 246, 0.18);
+}
+
+.menu-icon {
+  font-size: 20px;
+  color: var(--pixel-primary);
+}
+
+.menu-label {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pixel-text);
+}
+
+.menu-sub {
+  font-size: 10px;
+  color: var(--pixel-text-secondary);
+}
+
+/* Recent Items */
+.empty-hint {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 12px;
+  color: var(--pixel-border);
+  text-align: center;
+  padding: 16px;
+}
+
 .recent-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .recent-item {
@@ -581,7 +630,7 @@ onMounted(async () => {
   background: var(--pixel-bg);
   border: 2px solid var(--pixel-border);
   cursor: pointer;
-  transition: border-color 0.12s ease, transform 0.12s ease, background 0.12s ease;
+  transition: border-color 0.1s ease;
 }
 
 .recent-item:hover {
@@ -605,37 +654,99 @@ onMounted(async () => {
 }
 
 .recent-status {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
+  font-size: 10px;
+  opacity: 0.7;
 }
 
+.recent-status.active { color: var(--pixel-success); }
+.recent-status.idle { color: var(--pixel-warning); }
+.recent-status.retired { color: var(--pixel-text-secondary); }
+.recent-status.sold { color: var(--pixel-primary); }
+.recent-status.discarded { color: var(--pixel-accent); }
+
 .recent-cost {
-  font-family: 'Ark Pixel', monospace;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--pixel-primary);
   white-space: nowrap;
   margin-left: 8px;
 }
 
+/* Alert Items */
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--pixel-bg);
+  border: 2px solid var(--pixel-border);
+  cursor: pointer;
+  transition: border-color 0.1s ease;
+}
+
+.alert-item:hover {
+  border-color: var(--pixel-warning);
+}
+
+.alert-item.urgent {
+  border-color: var(--pixel-accent);
+}
+
+.alert-item.urgent .alert-days {
+  animation: pixel-blink 0.8s step-end infinite;
+}
+
+.alert-name {
+  font-size: 12px;
+  color: var(--pixel-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-days {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--pixel-warning);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.urgent .alert-days {
+  color: var(--pixel-accent);
+}
+
 /* ===== Responsive ===== */
-@media (max-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .charts-row {
+@media (max-width: 900px) {
+  .main-layout {
     grid-template-columns: 1fr;
   }
-  .bottom-row {
+
+  .char-top-row {
     grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .char-info {
+    align-items: center;
+    text-align: center;
+  }
+
+  .portrait-frame {
+    width: 160px;
+    height: 200px;
   }
 }
 
-@media (max-width: 640px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  .stat-value {
-    font-size: 14px;
-  }
+@keyframes pixel-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 </style>

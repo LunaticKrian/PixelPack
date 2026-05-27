@@ -91,11 +91,9 @@ async function loadItem() {
       warranty_expiry: item.warranty_expiry ? item.warranty_expiry.slice(0, 10) : '',
       expected_lifespan: item.expected_lifespan != null ? String(item.expected_lifespan) : '',
       usage_count: item.usage_count != null ? String(item.usage_count) : '',
-      tag_ids: [],
+      tag_ids: (item.tags || []).map((t: any) => t.id),
     }
-    // Note: tags would need a separate endpoint or be included in item response
-    // For now we load tag_ids if available
-    existingImages.value = []
+    existingImages.value = item.images || []
   } catch (e: any) {
     error.value = e?.data?.detail || '加载物品信息失败'
   } finally {
