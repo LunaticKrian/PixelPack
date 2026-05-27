@@ -222,7 +222,7 @@ onMounted(async () => {
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="pixel-loading"></div>
-      <span class="loading-text">LOADING...</span>
+      <span class="loading-text">加载中...</span>
     </div>
 
     <template v-else>
@@ -232,28 +232,28 @@ onMounted(async () => {
           <div class="stat-icon">◆</div>
           <div class="stat-info">
             <div class="stat-value">{{ overview?.total_items ?? 0 }}</div>
-            <div class="stat-label">TOTAL ITEMS</div>
+            <div class="stat-label">物品总数</div>
           </div>
         </div>
         <div class="stat-card accent pixel-card-hover">
           <div class="stat-icon">$</div>
           <div class="stat-info">
             <div class="stat-value">{{ formatCurrency(overview?.total_assets_value ?? 0) }}</div>
-            <div class="stat-label">ASSETS</div>
+            <div class="stat-label">资产总值</div>
           </div>
         </div>
         <div class="stat-card primary pixel-card-hover">
           <div class="stat-icon">◈</div>
           <div class="stat-info">
             <div class="stat-value">{{ formatCurrency(overview?.avg_daily_cost ?? 0) }}</div>
-            <div class="stat-label">AVG DAILY</div>
+            <div class="stat-label">日均成本</div>
           </div>
         </div>
         <div class="stat-card success pixel-card-hover">
           <div class="stat-icon">▶</div>
           <div class="stat-info">
             <div class="stat-value">{{ overview?.active_items ?? 0 }}</div>
-            <div class="stat-label">ACTIVE</div>
+            <div class="stat-label">使用中</div>
           </div>
         </div>
       </div>
@@ -262,15 +262,15 @@ onMounted(async () => {
       <div class="charts-row stagger-list">
         <!-- Category Pie -->
         <div class="chart-card pixel-card-hover">
-          <h3 class="chart-title">CATEGORY</h3>
-          <div v-if="categoryStats.length === 0" class="chart-empty">NO DATA</div>
+          <h3 class="chart-title">分类统计</h3>
+          <div v-if="categoryStats.length === 0" class="chart-empty">暂无数据</div>
           <div v-else ref="pieChartRef" class="chart-container"></div>
         </div>
 
         <!-- Monthly Trend -->
         <div class="chart-card wide pixel-card-hover">
-          <h3 class="chart-title">MONTHLY TREND</h3>
-          <div v-if="trends.length === 0" class="chart-empty">NO DATA</div>
+          <h3 class="chart-title">月度趋势</h3>
+          <div v-if="trends.length === 0" class="chart-empty">暂无数据</div>
           <div v-else ref="trendChartRef" class="chart-container"></div>
         </div>
       </div>
@@ -279,8 +279,8 @@ onMounted(async () => {
       <div class="bottom-row stagger-list">
         <!-- Daily Cost Rank -->
         <div class="chart-card pixel-card-hover">
-          <h3 class="chart-title">DAILY COST TOP</h3>
-          <div v-if="costRank.length === 0" class="chart-empty">NO DATA</div>
+          <h3 class="chart-title">日均成本排行</h3>
+          <div v-if="costRank.length === 0" class="chart-empty">暂无数据</div>
           <div v-else ref="rankChartRef" class="chart-container rank-chart"></div>
         </div>
 
@@ -290,10 +290,10 @@ onMounted(async () => {
           <div class="info-card pixel-card-hover">
             <h3 class="chart-title">
               <span class="title-icon">!</span>
-              WARRANTY ALERTS
+              保修提醒
             </h3>
             <div v-if="warrantyAlerts.length === 0" class="empty-hint">
-              <span>NO ALERTS</span>
+              <span>暂无提醒</span>
             </div>
             <div v-else class="alert-list">
               <div
@@ -303,7 +303,7 @@ onMounted(async () => {
               >
                 <span class="alert-name">{{ alert.name }}</span>
                 <span class="alert-days" :class="{ urgent: alert.days_remaining <= 7 }">
-                  {{ alert.days_remaining }}D
+                  {{ alert.days_remaining }}天
                 </span>
               </div>
             </div>
@@ -313,10 +313,10 @@ onMounted(async () => {
           <div class="info-card pixel-card-hover">
             <h3 class="chart-title">
               <span class="title-icon">★</span>
-              RECENT ITEMS
+              最近物品
             </h3>
             <div v-if="recentItems.length === 0" class="empty-hint">
-              <span>NO ITEMS</span>
+              <span>暂无物品</span>
             </div>
             <div v-else class="recent-list">
               <div

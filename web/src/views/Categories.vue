@@ -193,7 +193,7 @@ onMounted(loadCategories)
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="pixel-loading"></div>
-      <span class="loading-text">LOADING...</span>
+      <span class="loading-text">加载中...</span>
     </div>
 
     <!-- Error -->
@@ -793,6 +793,7 @@ onMounted(loadCategories)
   display: flex;
   flex-direction: column;
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
   overflow: hidden;
 }
 

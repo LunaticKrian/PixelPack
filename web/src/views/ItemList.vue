@@ -313,7 +313,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 20px;
   padding: 24px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -558,6 +558,7 @@ onMounted(() => {
   cursor: pointer;
   box-shadow: 3px 3px 0 var(--pixel-shadow);
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
   display: flex;
   flex-direction: column;
   overflow: hidden;

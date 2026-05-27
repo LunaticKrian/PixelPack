@@ -47,14 +47,14 @@ async function handleRegister() {
   <div class="register-form">
     <div class="form-title">
       <span class="prompt">></span>
-      <span>NEW GAME</span>
+      <span>新游戏</span>
       <span class="blink-cursor">_</span>
     </div>
 
     <div class="form-fields">
       <div class="field">
         <label class="field-label">
-          <span class="label-bracket">[</span>USERNAME<span class="label-bracket">]</span>
+          <span class="label-bracket">[</span>用户名<span class="label-bracket">]</span>
         </label>
         <input
           v-model="username"
@@ -68,8 +68,8 @@ async function handleRegister() {
 
       <div class="field">
         <label class="field-label">
-          <span class="label-bracket">[</span>EMAIL<span class="label-bracket">]</span>
-          <span class="optional-tag">OPTIONAL</span>
+          <span class="label-bracket">[</span>邮箱<span class="label-bracket">]</span>
+          <span class="optional-tag">选填</span>
         </label>
         <input
           v-model="email"
@@ -82,7 +82,7 @@ async function handleRegister() {
 
       <div class="field">
         <label class="field-label">
-          <span class="label-bracket">[</span>PASSWORD<span class="label-bracket">]</span>
+          <span class="label-bracket">[</span>密码<span class="label-bracket">]</span>
         </label>
         <input
           v-model="password"
@@ -96,7 +96,7 @@ async function handleRegister() {
 
       <div class="field">
         <label class="field-label">
-          <span class="label-bracket">[</span>CONFIRM<span class="label-bracket">]</span>
+          <span class="label-bracket">[</span>确认密码<span class="label-bracket">]</span>
         </label>
         <input
           v-model="confirmPassword"
@@ -116,12 +116,12 @@ async function handleRegister() {
 
     <button class="submit-btn" :disabled="loading" @click="handleRegister">
       <span v-if="loading" class="pixel-loading inline"></span>
-      <span v-else>▶ START</span>
+      <span v-else>▶ 开始</span>
     </button>
 
     <div class="switch-link">
       <span>已有账号？</span>
-      <router-link to="/login">LOGIN →</router-link>
+      <router-link to="/login">登录 →</router-link>
     </div>
   </div>
 </template>

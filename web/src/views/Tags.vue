@@ -112,19 +112,19 @@ onMounted(loadTags)
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="pixel-loading"></div>
-      <span class="loading-text">LOADING...</span>
+      <span class="loading-text">加载中...</span>
     </div>
 
     <template v-else>
       <!-- New tag form -->
       <div v-if="showNewForm" class="form-card pixel-border animate-fade-in">
         <div class="form-header">
-          <h3 class="form-title">+ NEW TAG</h3>
+          <h3 class="form-title">+ 新增标签</h3>
         </div>
         <div class="form-body">
           <div class="form-row">
             <div class="form-field">
-              <label class="form-label">NAME *</label>
+              <label class="form-label">名称 *</label>
               <input
                 v-model="newForm.name"
                 type="text"
@@ -135,7 +135,7 @@ onMounted(loadTags)
               />
             </div>
             <div class="form-field field-color">
-              <label class="form-label">COLOR</label>
+              <label class="form-label">颜色</label>
               <div class="color-picker-wrap">
                 <input v-model="newForm.color" type="color" class="color-input" />
                 <span class="color-value">{{ newForm.color }}</span>
@@ -148,9 +148,9 @@ onMounted(loadTags)
               @click="handleCreate"
               :disabled="!newForm.name.trim() || saving"
             >
-              {{ saving ? '...' : 'SAVE' }}
+              {{ saving ? '...' : '保存' }}
             </button>
-            <button class="pixel-btn" @click="cancelNew">CANCEL</button>
+            <button class="pixel-btn" @click="cancelNew">取消</button>
           </div>
         </div>
       </div>
@@ -198,7 +198,7 @@ onMounted(loadTags)
               <div class="form-body">
                 <div class="form-row">
                   <div class="form-field">
-                    <label class="form-label">NAME *</label>
+                    <label class="form-label">名称 *</label>
                     <input
                       v-model="editForm.name"
                       type="text"
@@ -210,7 +210,7 @@ onMounted(loadTags)
                     />
                   </div>
                   <div class="form-field field-color">
-                    <label class="form-label">COLOR</label>
+                    <label class="form-label">颜色</label>
                     <input v-model="editForm.color" type="color" class="color-input" />
                   </div>
                 </div>
@@ -220,7 +220,7 @@ onMounted(loadTags)
                     @click="handleSaveEdit(tag.id)"
                     :disabled="!editForm.name.trim() || saving"
                   >
-                    {{ saving ? '...' : 'SAVE' }}
+                    {{ saving ? '...' : '保存' }}
                   </button>
                   <button class="pixel-btn" @click="cancelEdit">CANCEL</button>
                 </div>
@@ -513,6 +513,7 @@ onMounted(loadTags)
   flex-direction: column;
   overflow: hidden;
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
 }
 
 .tag-card:hover {
