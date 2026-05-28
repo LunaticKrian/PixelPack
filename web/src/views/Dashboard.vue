@@ -507,6 +507,11 @@ onUnmounted(() => {
               <span class="menu-label">任务</span>
               <span class="menu-sub">每日任务</span>
             </button>
+            <button class="menu-btn" @click="router.push('/blog')">
+              <span class="menu-icon">✦</span>
+              <span class="menu-label">日志</span>
+              <span class="menu-sub">旅行日志</span>
+            </button>
           </div>
         </div>
 
@@ -1375,7 +1380,7 @@ onUnmounted(() => {
 /* Menu Grid */
 .menu-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
