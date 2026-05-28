@@ -392,7 +392,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Recent Items -->
-        <div class="info-section pixel-border">
+        <div class="info-section recent-section pixel-border">
           <div class="section-header">
             <span class="section-icon">★</span>
             <span>最近获取</span>
@@ -559,7 +559,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 3fr 2fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* ===== Character Panel (Left) ===== */
@@ -1002,12 +1002,27 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow: hidden;
 }
 
 .menu-section,
 .info-section {
   background: var(--pixel-card-bg);
   padding: 16px;
+}
+
+.info-section.recent-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.info-section.recent-section .recent-list {
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 .section-header {
