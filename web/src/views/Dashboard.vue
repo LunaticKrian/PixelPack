@@ -254,10 +254,15 @@ onMounted(loadAll)
             <span>系统菜单</span>
           </div>
           <div class="menu-grid">
-            <button class="menu-btn primary" @click="goToItems">
+            <button class="menu-btn" @click="goToItems">
               <span class="menu-icon">◆</span>
               <span class="menu-label">背包</span>
               <span class="menu-sub">物品管理</span>
+            </button>
+            <button class="menu-btn" @click="router.push('/quests')">
+              <span class="menu-icon">▣</span>
+              <span class="menu-label">任务</span>
+              <span class="menu-sub">每日任务</span>
             </button>
           </div>
         </div>

@@ -218,26 +218,24 @@ async def check_achievements(db: AsyncSession, user_id: int) -> list[str]:
 
     # Check registration age
     if user and user.created_at:
-        days_since = (datetime.now(timezone.utc) - user.created_at).days
+        created = user.created_at.replace(tzinfo=timezone.utc) if user.created_at.tzinfo is None else user.created_at
+        days_since = (datetime.now(timezone.utc) - created).days
         if days_since >= 7:
             checks["SEVEN_DAYS"] = True
 
-    # Check avg daily cost
-    avg_cost = (await db.execute(
-        select(func.avg(
-            (Item.purchase_price + func.coalesce(
-                select(func.sum(Item.__table__.c.id)).select_from(Item).where(Item.user_id == user_id).correlate(None),
-                0
-            )) / func.greatest(
-                func.extract("day", func.now() - Item.purchase_date) + 1,
-                1,
-            )
-        )).where(
+    # Check avg daily cost (SQLite-compatible)
+    item_stats = (await db.execute(
+        select(func.sum(Item.purchase_price), func.count(Item.id)).where(
             Item.user_id == user_id, Item.deleted_at.is_(None)
         )
-    )).scalar()
-    if avg_cost is not None and float(avg_cost) < 5:
-        checks["THRIFTY"] = True
+    )).one()
+    if item_stats[0] and item_stats[1]:
+        total_price = float(item_stats[0])
+        item_count = int(item_stats[1])
+        days_since = (datetime.now(timezone.utc) - created).days if user and user.created_at else 1
+        days = max(days_since, 1)
+        if total_price / days < 5:
+            checks["THRIFTY"] = True
 
     for aid, condition_met in checks.items():
         if condition_met:

@@ -13,6 +13,7 @@ from app.schemas.item import (
     CostResponse,
     CostUpdate,
     ItemCreate,
+    ItemImageResponse,
     ItemListResponse,
     ItemResponse,
     ItemUpdate,
@@ -270,14 +271,13 @@ async def delete_existing_cost(
 
 
 # ── Images ─────────────────────────────────────────────────────────────
-@router.post("/{item_id}/images", response_model=CostResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{item_id}/images", response_model=ItemImageResponse, status_code=status.HTTP_201_CREATED)
 async def upload_image(
     item_id: int,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> dict:
-    from app.schemas.item import ItemImageResponse
+):
 
     item = await get_item_by_id(db, item_id, current_user.id)
     if item is None:
