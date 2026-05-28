@@ -194,12 +194,11 @@ onUnmounted(() => {
               <div class="portrait-deco top-right"></div>
               <div class="portrait-deco bottom-left"></div>
               <div class="portrait-deco bottom-right"></div>
-              <!-- Speech Bubble -->
-              <div class="speech-bubble" :class="{ visible: showBubble }">
-                <div class="speech-pointer"></div>
-                <span class="speech-text">{{ currentGreeting }}</span>
-                <span class="speech-cursor" v-if="isTyping">▎</span>
-              </div>
+            </div>
+            <!-- Speech Bubble (outside portrait-frame to allow overflow) -->
+            <div class="speech-bubble" :class="{ visible: showBubble }">
+              <div class="speech-pointer"></div>
+              <span class="speech-text">{{ currentGreeting }}</span><span class="speech-cursor" :style="{ visibility: isTyping ? 'visible' : 'hidden' }">▎</span>
             </div>
           </div>
           <!-- Right: Info + Stats + Bars -->
@@ -450,6 +449,7 @@ onUnmounted(() => {
 }
 
 .char-portrait-col {
+  position: relative;
   display: flex;
   justify-content: center;
 }
@@ -1069,28 +1069,29 @@ onUnmounted(() => {
 /* ===== Speech Bubble ===== */
 .speech-bubble {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  min-width: 120px;
-  max-width: 180px;
+  top: 4px;
+  right: -16px;
+  min-width: 140px;
+  max-width: 200px;
   background: var(--pixel-card-bg);
   border: 3px solid var(--pixel-primary);
   box-shadow: 3px 3px 0 var(--pixel-shadow);
   padding: 10px 12px;
   z-index: 50;
   opacity: 0;
-  transform: scale(0.9) translateY(-4px);
+  transform: translateY(-4px) scale(0.95);
   transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
   font-family: var(--font-pixel), 'Ark Pixel', monospace;
   font-size: 11px;
   color: var(--pixel-text);
   line-height: 1.6;
+  will-change: transform, opacity;
 }
 
 .speech-bubble.visible {
   opacity: 1;
-  transform: scale(1) translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 .speech-pointer {
@@ -1115,12 +1116,11 @@ onUnmounted(() => {
 }
 
 .speech-cursor {
-  display: inline-block;
+  display: inline;
   color: var(--pixel-primary);
   animation: cursor-blink 0.5s step-end infinite;
   font-size: 11px;
   margin-left: 1px;
-  vertical-align: baseline;
 }
 
 @keyframes cursor-blink {
