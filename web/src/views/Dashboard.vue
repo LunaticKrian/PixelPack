@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   getOverview, getRecentItems, getWarrantyAlerts,
@@ -87,7 +87,86 @@ function goToItems() {
   router.push('/items')
 }
 
-onMounted(loadAll)
+// ── Speech Bubble ──────────────────────────────────────────────────────
+const GREETINGS = [
+  '欢迎回来，冒险者！',
+  '今天也要加油哦~',
+  '物品整理得好，心情好！',
+  '别忘了查看每日任务！',
+  '有新物品要记录吗？',
+  '你的背包越来越充实了！',
+  '注意保修到期的物品~',
+  '继续收集物品吧！',
+  '冒险者，辛苦了！',
+  '整理是一种超能力！',
+  '每日任务完成了吗？',
+  '保持良好的记录习惯！',
+]
+
+const currentGreeting = ref('')
+const showBubble = ref(false)
+const isTyping = ref(false)
+let greetingTimer: ReturnType<typeof setTimeout> | null = null
+let greetPool = [...GREETINGS].sort(() => Math.random() - 0.5)
+let greetIdx = 0
+
+function getTimeGreeting(): string {
+  const h = new Date().getHours()
+  if (h < 6) return '夜深了，注意休息...'
+  if (h < 9) return '早上好！新的一天开始了！'
+  if (h < 12) return '上午好，继续加油！'
+  if (h < 14) return '午安，记得休息一下~'
+  if (h < 18) return '下午好，冲冲冲！'
+  if (h < 22) return '晚上好，冒险者！'
+  return '夜深了，早点休息吧...'
+}
+
+function typewrite(text: string, cb?: () => void) {
+  isTyping.value = true
+  currentGreeting.value = ''
+  let i = 0
+  const tick = () => {
+    if (i < text.length) {
+      currentGreeting.value += text[i++]
+      greetingTimer = setTimeout(tick, 50 + Math.random() * 40)
+    } else {
+      isTyping.value = false
+      cb?.()
+    }
+  }
+  tick()
+}
+
+function nextGreeting() {
+  if (greetIdx === 0) {
+    showBubble.value = true
+    typewrite(getTimeGreeting(), () => {
+      greetIdx++
+      greetingTimer = setTimeout(nextGreeting, 7000 + Math.random() * 3000)
+    })
+    return
+  }
+  if (greetIdx >= greetPool.length) {
+    greetPool = [...GREETINGS].sort(() => Math.random() - 0.5)
+    greetIdx = 0
+  }
+  showBubble.value = false
+  greetingTimer = setTimeout(() => {
+    showBubble.value = true
+    typewrite(greetPool[greetIdx++], () => {
+      greetingTimer = setTimeout(nextGreeting, 6000 + Math.random() * 4000)
+    })
+  }, 350)
+}
+
+onMounted(() => {
+  loadAll()
+  nextGreeting()
+})
+
+onUnmounted(() => {
+  if (greetingTimer) clearTimeout(greetingTimer)
+})
 </script>
 
 <template>
@@ -115,6 +194,12 @@ onMounted(loadAll)
               <div class="portrait-deco top-right"></div>
               <div class="portrait-deco bottom-left"></div>
               <div class="portrait-deco bottom-right"></div>
+              <!-- Speech Bubble -->
+              <div class="speech-bubble" :class="{ visible: showBubble }">
+                <div class="speech-pointer"></div>
+                <span class="speech-text">{{ currentGreeting }}</span>
+                <span class="speech-cursor" v-if="isTyping">▎</span>
+              </div>
             </div>
           </div>
           <!-- Right: Info + Stats + Bars -->
@@ -981,6 +1066,68 @@ onMounted(loadAll)
   color: var(--pixel-accent);
 }
 
+/* ===== Speech Bubble ===== */
+.speech-bubble {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 120px;
+  max-width: 180px;
+  background: var(--pixel-card-bg);
+  border: 3px solid var(--pixel-primary);
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
+  padding: 10px 12px;
+  z-index: 50;
+  opacity: 0;
+  transform: scale(0.9) translateY(-4px);
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 11px;
+  color: var(--pixel-text);
+  line-height: 1.6;
+}
+
+.speech-bubble.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.speech-pointer {
+  position: absolute;
+  bottom: -9px;
+  left: 14px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 9px solid var(--pixel-primary);
+}
+
+.speech-pointer::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -8px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--pixel-card-bg);
+}
+
+.speech-cursor {
+  display: inline-block;
+  color: var(--pixel-primary);
+  animation: cursor-blink 0.5s step-end infinite;
+  font-size: 11px;
+  margin-left: 1px;
+  vertical-align: baseline;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .main-layout {
@@ -1000,6 +1147,10 @@ onMounted(loadAll)
   .portrait-frame {
     width: 160px;
     height: 200px;
+  }
+
+  .speech-bubble {
+    display: none;
   }
 }
 
