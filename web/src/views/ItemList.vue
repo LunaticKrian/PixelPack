@@ -564,10 +564,10 @@ onMounted(() => {
         <!-- Character Portrait -->
         <div class="portrait-card pixel-border">
           <div class="pc-frame">
-            <img src="/img/portrait.png" alt="Character" class="pc-img" />
+            <img :src="auth.user?.portrait_url || '/img/portrait.png'" alt="Character" class="pc-img" />
           </div>
           <div class="pc-info">
-            <div class="pc-name">冒险者 {{ auth.user?.username }}</div>
+            <div class="pc-name">冒险者 {{ auth.user?.character_name || auth.user?.username }}</div>
             <div class="pc-level">Lv.{{ overview?.total_items ?? 0 }}</div>
           </div>
         </div>

@@ -76,6 +76,12 @@ const router = createRouter({
       component: () => import('../views/Quests.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/character/create',
+      name: 'character-create',
+      component: () => import('../views/CharacterCreation.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
@@ -92,6 +98,11 @@ router.beforeEach(async (to) => {
 
   if (to.meta.guest && auth.isAuthenticated) {
     return { name: 'dashboard' }
+  }
+
+  // Redirect to character creation if profile not completed
+  if (auth.isAuthenticated && auth.user && !auth.user.profile_completed && to.name !== 'character-create') {
+    return { name: 'character-create' }
   }
 })
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -15,21 +15,16 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
-const triggerRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
 
 const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 
 const today = new Date()
 const viewYear = ref(today.getFullYear())
 const viewMonth = ref(today.getMonth())
 
-const displayText = computed(() => {
-  if (!props.modelValue) return ''
-  return props.modelValue
-})
-
-const displayMonth = computed(() => `${viewYear.value}年${viewMonth.value + 1}月`)
+const displayText = computed(() => props.modelValue || '')
 
 const calendarDays = computed(() => {
   const y = viewYear.value
@@ -44,47 +39,53 @@ const calendarDays = computed(() => {
     const d = prevDays - i
     const pm = m === 0 ? 11 : m - 1
     const py = m === 0 ? y - 1 : y
-    days.push({ date: formatStr(py, pm, d), day: d, inMonth: false, isToday: false, selected: false })
+    days.push({ date: fmt(py, pm, d), day: d, inMonth: false, isToday: false, selected: false })
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = formatStr(y, m, d)
-    days.push({
-      date: dateStr,
-      day: d,
-      inMonth: true,
-      isToday: dateStr === formatToday(),
-      selected: dateStr === props.modelValue,
-    })
+    const ds = fmt(y, m, d)
+    days.push({ date: ds, day: d, inMonth: true, isToday: ds === fmtToday(), selected: ds === props.modelValue })
   }
 
-  const remaining = 42 - days.length
-  for (let d = 1; d <= remaining; d++) {
+  const rem = 42 - days.length
+  for (let d = 1; d <= rem; d++) {
     const nm = m === 11 ? 0 : m + 1
     const ny = m === 11 ? y + 1 : y
-    days.push({ date: formatStr(ny, nm, d), day: d, inMonth: false, isToday: false, selected: false })
+    days.push({ date: fmt(ny, nm, d), day: d, inMonth: false, isToday: false, selected: false })
   }
 
   return days
 })
 
-function formatStr(y: number, m: number, d: number): string {
+// Year range for quick select
+const yearPage = ref(0)
+const yearGrid = computed(() => {
+  const base = viewYear.value + yearPage.value * 12
+  const years: number[] = []
+  for (let i = -7; i <= 4; i++) years.push(base + i)
+  return years
+})
+
+function fmt(y: number, m: number, d: number): string {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-function formatToday(): string {
+function fmtToday(): string {
   const t = new Date()
-  return formatStr(t.getFullYear(), t.getMonth(), t.getDate())
+  return fmt(t.getFullYear(), t.getMonth(), t.getDate())
 }
 
-function toggle() {
+// Sub-panel: 'days' | 'months' | 'years'
+const subPanel = ref<'days' | 'months' | 'years'>('days')
+
+function toggle(e: MouseEvent) {
+  e.stopPropagation()
   open.value = !open.value
+  subPanel.value = 'days'
+  yearPage.value = 0
   if (open.value && props.modelValue) {
     const [y, m] = props.modelValue.split('-').map(Number)
-    if (y && m) {
-      viewYear.value = y
-      viewMonth.value = m - 1
-    }
+    if (y && m) { viewYear.value = y; viewMonth.value = m - 1 }
   }
 }
 
@@ -99,71 +100,123 @@ function clearDate() {
 }
 
 function prevMonth() {
-  if (viewMonth.value === 0) {
-    viewMonth.value = 11
-    viewYear.value--
-  } else {
-    viewMonth.value--
-  }
+  if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value-- }
+  else viewMonth.value--
 }
 
 function nextMonth() {
-  if (viewMonth.value === 11) {
-    viewMonth.value = 0
-    viewYear.value++
-  } else {
-    viewMonth.value++
-  }
+  if (viewMonth.value === 11) { viewMonth.value = 0; viewYear.value++ }
+  else viewMonth.value++
 }
 
 function goToday() {
   const t = new Date()
   viewYear.value = t.getFullYear()
   viewMonth.value = t.getMonth()
+  subPanel.value = 'days'
 }
 
-function onClickOutside(e: MouseEvent) {
-  if (!open.value) return
-  const target = e.target as HTMLElement
-  if (triggerRef.value?.contains(target) || panelRef.value?.contains(target)) return
-  open.value = false
+function showMonths() { subPanel.value = 'months' }
+function showYears() { subPanel.value = 'years'; yearPage.value = 0 }
+
+function pickMonth(m: number) {
+  viewMonth.value = m
+  subPanel.value = 'days'
 }
 
-onMounted(() => document.addEventListener('click', onClickOutside, true))
-onBeforeUnmount(() => document.removeEventListener('click', onClickOutside, true))
+function pickYear(y: number) {
+  viewYear.value = y
+  subPanel.value = 'months'
+}
+
+function yearPagePrev() { yearPage.value-- }
+function yearPageNext() { yearPage.value++ }
+
+function onPanelClick(e: MouseEvent) { e.stopPropagation() }
+
+function onDocClick() {
+  if (open.value) open.value = false
+}
+
+onMounted(() => document.addEventListener('click', onDocClick))
+onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
+
+watch(() => props.modelValue, (v) => {
+  if (v) {
+    const [y, m] = v.split('-').map(Number)
+    if (y && m) { viewYear.value = y; viewMonth.value = m - 1 }
+  }
+})
 </script>
 
 <template>
   <div class="px-datepicker" :style="{ width }">
-    <div
-      ref="triggerRef"
-      class="px-date-trigger"
-      :class="{ active: open }"
-      @click="toggle"
-    >
+    <div class="px-date-trigger" :class="{ active: open }" @click="toggle">
       <span class="px-date-text" :class="{ placeholder: !modelValue }">
         {{ displayText || placeholder }}
       </span>
       <span class="px-date-icon">📅</span>
     </div>
-    <div v-if="open" ref="panelRef" class="px-date-panel">
+    <div
+      ref="panelRef"
+      class="px-date-panel"
+      :class="{ visible: open }"
+      @click="onPanelClick"
+    >
+      <!-- Navigation -->
       <div class="px-date-nav">
         <button class="px-nav-btn" @click="prevMonth">◀</button>
-        <span class="px-month-label">{{ displayMonth }}</span>
+        <button class="px-nav-label" @click="showYears">{{ viewYear }}年</button>
+        <button class="px-nav-label" @click="showMonths">{{ viewMonth + 1 }}月</button>
         <button class="px-nav-btn" @click="nextMonth">▶</button>
       </div>
-      <div class="px-week-header">
-        <span v-for="d in weekDays" :key="d" class="px-week-day">{{ d }}</span>
+
+      <!-- Day grid -->
+      <template v-if="subPanel === 'days'">
+        <div class="px-week-header">
+          <span v-for="d in weekDays" :key="d" class="px-week-day">{{ d }}</span>
+        </div>
+        <div class="px-days-grid">
+          <div
+            v-for="(d, i) in calendarDays"
+            :key="i"
+            class="px-day"
+            :class="{ outside: !d.inMonth, today: d.isToday, selected: d.selected }"
+            @click="selectDate(d.date)"
+          >{{ d.day }}</div>
+        </div>
+      </template>
+
+      <!-- Month grid -->
+      <div v-if="subPanel === 'months'" class="px-sub-grid months-grid">
+        <button
+          v-for="(name, idx) in monthNames"
+          :key="idx"
+          class="px-sub-cell"
+          :class="{ active: idx === viewMonth }"
+          @click="pickMonth(idx)"
+        >{{ name }}</button>
       </div>
-      <div class="px-days-grid">
-        <div
-          v-for="(d, i) in calendarDays"
-          :key="i"
-          class="px-day"
-          :class="{ outside: !d.inMonth, today: d.isToday, selected: d.selected }"
-          @click="selectDate(d.date)"
-        >{{ d.day }}</div>
+
+      <!-- Year grid -->
+      <div v-if="subPanel === 'years'">
+        <div class="px-year-nav">
+          <button class="px-nav-btn sm" @click="yearPagePrev">◀</button>
+          <span class="px-year-range">{{ yearGrid[0] }} - {{ yearGrid[yearGrid.length - 1] }}</span>
+          <button class="px-nav-btn sm" @click="yearPageNext">▶</button>
+        </div>
+        <div class="px-sub-grid years-grid">
+          <button
+            v-for="y in yearGrid"
+            :key="y"
+            class="px-sub-cell"
+            :class="{ active: y === viewYear }"
+            @click="pickYear(y)"
+          >{{ y }}</button>
+        </div>
       </div>
+
+      <!-- Footer -->
       <div class="px-date-footer">
         <button class="px-footer-btn" @click="goToday">今天</button>
         <button class="px-footer-btn clear" @click="clearDate">清除</button>
@@ -193,30 +246,18 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside, true
   transition: border-color 0.12s ease;
 }
 
-.px-date-trigger:hover {
-  border-color: var(--pixel-primary);
-}
+.px-date-trigger:hover { border-color: var(--pixel-primary); }
 
 .px-date-trigger.active {
   border-color: var(--pixel-primary);
   box-shadow: 0 0 0 1px var(--pixel-primary);
 }
 
-.px-date-text {
-  flex: 1;
-  letter-spacing: 0.5px;
-}
+.px-date-text { flex: 1; letter-spacing: 0.5px; }
+.px-date-text.placeholder { color: var(--pixel-text-secondary); opacity: 0.5; }
+.px-date-icon { font-size: 12px; flex-shrink: 0; }
 
-.px-date-text.placeholder {
-  color: var(--pixel-text-secondary);
-  opacity: 0.5;
-}
-
-.px-date-icon {
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
+/* Panel */
 .px-date-panel {
   position: absolute;
   top: 100%;
@@ -227,20 +268,24 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside, true
   border-top: none;
   width: 260px;
   padding: 8px;
-  animation: px-date-in 0.1s ease-out;
   box-shadow: 4px 4px 0 var(--pixel-shadow);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
 }
 
-@keyframes px-date-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+.px-date-panel.visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Navigation */
 .px-date-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 4px;
   padding: 4px 0 8px;
 }
 
@@ -255,23 +300,30 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside, true
   transition: border-color 0.1s, color 0.1s;
 }
 
-.px-nav-btn:hover {
-  border-color: var(--pixel-primary);
-  color: var(--pixel-primary);
-}
+.px-nav-btn:hover { border-color: var(--pixel-primary); color: var(--pixel-primary); }
+.px-nav-btn.sm { padding: 1px 6px; font-size: 9px; }
 
-.px-month-label {
+.px-nav-label {
+  background: none;
+  border: 2px solid transparent;
+  color: var(--pixel-text);
   font-family: var(--font-pixel), 'Ark Pixel', monospace;
   font-size: 12px;
-  color: var(--pixel-text);
   font-weight: 600;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.px-nav-label:hover {
+  border-color: var(--pixel-primary);
+  background: rgba(65, 166, 246, 0.08);
 }
 
 /* Week header */
 .px-week-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0;
   margin-bottom: 4px;
 }
 
@@ -299,34 +351,61 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside, true
   transition: background 0.08s, color 0.08s, border-color 0.08s;
 }
 
-.px-day:hover {
-  background: rgba(65, 166, 246, 0.1);
-  border-color: var(--pixel-primary);
+.px-day:hover { background: rgba(65, 166, 246, 0.1); border-color: var(--pixel-primary); }
+.px-day.outside { color: var(--pixel-text-secondary); opacity: 0.35; }
+.px-day.outside:hover { opacity: 0.7; }
+.px-day.today { border: 2px solid var(--pixel-primary); font-weight: 700; }
+.px-day.selected { background: var(--pixel-primary); color: var(--pixel-bg); border-color: var(--pixel-primary); }
+.px-day.selected:hover { background: var(--pixel-primary); color: var(--pixel-bg); }
+
+/* Sub-selection grids (months & years) */
+.px-sub-grid {
+  display: grid;
+  gap: 4px;
 }
 
-.px-day.outside {
+.px-sub-grid.months-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.px-sub-grid.years-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.px-sub-cell {
+  background: var(--pixel-bg);
+  border: 2px solid var(--pixel-border);
+  color: var(--pixel-text);
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 11px;
+  padding: 6px 2px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s, color 0.1s;
+}
+
+.px-sub-cell:hover {
+  border-color: var(--pixel-primary);
+  background: rgba(65, 166, 246, 0.08);
+}
+
+.px-sub-cell.active {
+  border-color: var(--pixel-primary);
+  background: var(--pixel-primary);
+  color: var(--pixel-bg);
+}
+
+/* Year nav */
+.px-year-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0 8px;
+}
+
+.px-year-range {
+  font-size: 10px;
   color: var(--pixel-text-secondary);
-  opacity: 0.35;
-}
-
-.px-day.outside:hover {
-  opacity: 0.7;
-}
-
-.px-day.today {
-  border: 2px solid var(--pixel-primary);
-  font-weight: 700;
-}
-
-.px-day.selected {
-  background: var(--pixel-primary);
-  color: var(--pixel-bg);
-  border-color: var(--pixel-primary);
-}
-
-.px-day.selected:hover {
-  background: var(--pixel-primary);
-  color: var(--pixel-bg);
 }
 
 /* Footer */
@@ -349,13 +428,6 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside, true
   transition: border-color 0.1s, color 0.1s;
 }
 
-.px-footer-btn:hover {
-  border-color: var(--pixel-primary);
-  color: var(--pixel-primary);
-}
-
-.px-footer-btn.clear:hover {
-  border-color: var(--pixel-accent);
-  color: var(--pixel-accent);
-}
+.px-footer-btn:hover { border-color: var(--pixel-primary); color: var(--pixel-primary); }
+.px-footer-btn.clear:hover { border-color: var(--pixel-accent); color: var(--pixel-accent); }
 </style>

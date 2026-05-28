@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { LoginRequest, RegisterRequest, TokenResponse, User, UserUpdate, PasswordChange } from '../types/user'
+import type { LoginRequest, ProfileUpdate, RegisterRequest, TokenResponse, User, UserUpdate, PasswordChange } from '../types/user'
 
 export function login(data: LoginRequest) {
   return api<TokenResponse>('/auth/login', { method: 'POST', body: data })
@@ -23,4 +23,14 @@ export function updateMe(data: UserUpdate) {
 
 export function changePassword(data: PasswordChange) {
   return api<{ message: string }>('/auth/password', { method: 'PUT', body: data })
+}
+
+export function updateProfile(data: ProfileUpdate) {
+  return api<User>('/auth/profile', { method: 'PUT', body: data })
+}
+
+export function uploadPortrait(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return api<{ url: string }>('/auth/portrait', { method: 'POST', body: formData })
 }

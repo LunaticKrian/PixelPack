@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date as date_type, datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -19,6 +19,11 @@ class UserResponse(BaseModel):
     username: str
     email: str | None
     avatar_url: str | None
+    character_name: str | None
+    portrait_url: str | None
+    character_class: str | None
+    birthday: date_type | None
+    profile_completed: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -42,3 +47,13 @@ class PasswordChange(BaseModel):
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
     avatar_url: str | None = None
+
+
+class ProfileUpdate(BaseModel):
+    character_name: str | None = Field(default=None, min_length=1, max_length=50)
+    character_class: str | None = Field(default=None, max_length=100)
+    birthday: date_type | None = None
+
+
+class PortraitUploadResponse(BaseModel):
+    url: str

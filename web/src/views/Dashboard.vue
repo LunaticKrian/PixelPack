@@ -5,14 +5,54 @@ import {
   getOverview, getRecentItems, getWarrantyAlerts,
   type OverviewStats, type RecentItem, type WarrantyAlert,
 } from '../api/stats'
+import { getItem } from '../api/items'
+import type { Item } from '../types/item'
 import { getQuestSummary } from '../api/quests'
 import type { QuestSummary, Achievement } from '../types/quest'
 import { formatCurrency, formatDays } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
+import CharacterInfoModal from '../components/CharacterInfoModal.vue'
 
 const auth = useAuthStore()
 
 const router = useRouter()
+
+const showCharModal = ref(false)
+
+// Item detail modal
+const showDetailModal = ref(false)
+const detailLoading = ref(false)
+const detailItem = ref<Item | null>(null)
+const detailImages = ref<{ id: number; url: string }[]>([])
+const detailCosts = ref<{ id: number; name: string; amount: number }[]>([])
+
+const statusMap: Record<string, { label: string; color: string }> = {
+  ACTIVE: { label: '使用中', color: '#38b764' },
+  IDLE: { label: '闲置', color: '#ef7d57' },
+  RETIRED: { label: '退役', color: '#a0a0b0' },
+  SOLD: { label: '已售', color: '#41a6f6' },
+  DISCARDED: { label: '已弃', color: '#ff6b6b' },
+}
+
+async function openItemDetail(id: number) {
+  detailLoading.value = true
+  showDetailModal.value = true
+  try {
+    const res = await getItem(id)
+    detailItem.value = res
+    detailImages.value = (res as any).images || []
+    detailCosts.value = (res as any).additional_costs || []
+  } catch {
+    showDetailModal.value = false
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function closeDetailModal() {
+  showDetailModal.value = false
+  detailItem.value = null
+}
 
 const loading = ref(true)
 const overview = ref<OverviewStats | null>(null)
@@ -80,7 +120,7 @@ async function loadAll() {
 }
 
 function goToItem(id: number) {
-  router.push(`/items/${id}`)
+  openItemDetail(id)
 }
 
 function goToItems() {
@@ -184,10 +224,10 @@ onUnmounted(() => {
         <div class="char-top-row">
           <!-- Left: Portrait -->
           <div class="char-portrait-col">
-            <div class="portrait-frame">
+            <div class="portrait-frame" @dblclick="showCharModal = true">
               <div class="portrait-inner">
                 <div class="portrait-placeholder">
-                  <img src="/img/portrait.png" alt="Character Portrait" class="portrait-img" />
+                  <img :src="auth.user?.portrait_url || '/img/portrait.png'" alt="Character Portrait" class="portrait-img" />
                 </div>
               </div>
               <div class="portrait-deco top-left"></div>
@@ -204,9 +244,9 @@ onUnmounted(() => {
           <!-- Right: Info + Stats + Bars -->
           <div class="char-data-col">
             <div class="char-info">
-              <div class="char-name">冒险者 {{ auth.user?.username }}</div>
+              <div class="char-name">冒险者 {{ auth.user?.character_name || auth.user?.username }}</div>
               <div class="char-level">Lv.{{ level }}</div>
-              <div class="char-class">物品管理者</div>
+              <div class="char-class">{{ auth.user?.character_class?.split('|')[0] || '物品管理者' }}</div>
             </div>
 
             <div class="char-stats">
@@ -398,6 +438,97 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <CharacterInfoModal :visible="showCharModal" @close="showCharModal = false" />
+
+    <!-- Item Detail Modal -->
+    <Teleport to="body">
+      <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
+        <div class="modal-card">
+          <div v-if="detailLoading" class="modal-loading">
+            <div class="pixel-loading"></div>
+          </div>
+          <template v-else-if="detailItem">
+            <div class="modal-header">
+              <div class="modal-title-row">
+                <h2 class="modal-item-name">{{ detailItem.name }}</h2>
+                <span
+                  class="modal-status"
+                  :style="{
+                    color: statusMap[detailItem.status]?.color,
+                    borderColor: statusMap[detailItem.status]?.color,
+                    background: (statusMap[detailItem.status]?.color || '') + '18'
+                  }"
+                >
+                  {{ statusMap[detailItem.status]?.label || detailItem.status }}
+                </span>
+              </div>
+              <button class="modal-close" @click="closeDetailModal">✕</button>
+            </div>
+            <div class="modal-body">
+              <div class="modal-columns">
+                <div class="modal-left">
+                  <div class="modal-image-area">
+                    <img
+                      v-if="detailImages.length > 0"
+                      :src="detailImages[0].url"
+                      :alt="detailItem.name"
+                      class="modal-image"
+                    />
+                    <div v-else class="modal-image-placeholder"><span>◆</span></div>
+                  </div>
+                </div>
+                <div class="modal-right">
+                  <div class="modal-stat-hero">
+                    <div class="stat-hero-label">日均成本</div>
+                    <div class="stat-hero-value">{{ formatCurrency(detailItem.daily_cost, detailItem.currency) }}</div>
+                    <div class="stat-hero-unit">/ 天</div>
+                  </div>
+                  <div class="modal-detail-grid">
+                    <div class="modal-detail-item">
+                      <span class="detail-label">购买价格</span>
+                      <span class="detail-value highlight">{{ formatCurrency(detailItem.purchase_price, detailItem.currency) }}</span>
+                    </div>
+                    <div class="modal-detail-item">
+                      <span class="detail-label">总投入</span>
+                      <span class="detail-value">{{ formatCurrency(detailItem.total_cost, detailItem.currency) }}</span>
+                    </div>
+                    <div class="modal-detail-item">
+                      <span class="detail-label">使用天数</span>
+                      <span class="detail-value">{{ formatDays(detailItem.usage_days) }}</span>
+                    </div>
+                    <div class="modal-detail-item" v-if="detailItem.purchase_channel">
+                      <span class="detail-label">购买渠道</span>
+                      <span class="detail-value">{{ detailItem.purchase_channel }}</span>
+                    </div>
+                    <div class="modal-detail-item" v-if="detailItem.current_value != null">
+                      <span class="detail-label">当前价值</span>
+                      <span class="detail-value">{{ formatCurrency(detailItem.current_value, detailItem.currency) }}</span>
+                    </div>
+                    <div class="modal-detail-item" v-if="detailItem.description">
+                      <span class="detail-label">描述</span>
+                      <span class="detail-value desc">{{ detailItem.description }}</span>
+                    </div>
+                  </div>
+                  <div v-if="detailItem.tags && detailItem.tags.length" class="modal-tags">
+                    <span
+                      v-for="tag in detailItem.tags"
+                      :key="tag.id"
+                      class="modal-tag"
+                      :style="{ borderColor: tag.color || 'var(--pixel-border)' }"
+                    >{{ tag.name }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="pixel-btn primary" @click="router.push(`/items/${detailItem.id}`); closeDetailModal()">✎ 查看详情</button>
+              <button class="pixel-btn" @click="closeDetailModal">关闭</button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -462,6 +593,12 @@ onUnmounted(() => {
   border: 3px solid var(--pixel-primary);
   background: var(--pixel-bg);
   box-shadow: 3px 3px 0 var(--pixel-shadow), inset 0 0 0 3px var(--pixel-bg), inset 0 0 0 6px var(--pixel-border);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.portrait-frame:hover {
+  box-shadow: 3px 3px 0 var(--pixel-shadow), inset 0 0 0 3px var(--pixel-bg), inset 0 0 0 6px var(--pixel-border), 0 0 12px rgba(65, 166, 246, 0.2);
 }
 
 .portrait-inner {
@@ -1128,6 +1265,228 @@ onUnmounted(() => {
   50% { opacity: 0; }
 }
 
+/* ===== Item Detail Modal ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: pixel-fade-in 0.15s ease-out;
+}
+
+.modal-card {
+  background: var(--pixel-card-bg);
+  border: 3px solid var(--pixel-border);
+  box-shadow: 6px 6px 0 var(--pixel-shadow);
+  width: 680px;
+  max-width: 92vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: pixel-scale-in 0.2s ease-out;
+}
+
+.modal-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 3px solid var(--pixel-border);
+  background: var(--pixel-bg-secondary);
+}
+
+.modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.modal-item-name {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--pixel-primary);
+  margin: 0;
+}
+
+.modal-status {
+  font-size: 10px;
+  padding: 2px 8px;
+  border: 2px solid;
+  white-space: nowrap;
+}
+
+.modal-close {
+  background: none;
+  border: 2px solid var(--pixel-border);
+  color: var(--pixel-text-secondary);
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  border-color: var(--pixel-accent);
+  color: var(--pixel-accent);
+}
+
+.modal-body { padding: 20px; }
+
+.modal-columns {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 20px;
+}
+
+.modal-image-area {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--pixel-bg);
+  border: 3px solid var(--pixel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.modal-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.modal-image-placeholder {
+  font-size: 48px;
+  color: var(--pixel-border);
+}
+
+.modal-stat-hero {
+  text-align: center;
+  padding: 8px 0 12px;
+}
+
+.stat-hero-label {
+  font-size: 10px;
+  color: var(--pixel-text-secondary);
+}
+
+.stat-hero-value {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--pixel-primary);
+}
+
+.stat-hero-unit {
+  font-size: 10px;
+  color: var(--pixel-text-secondary);
+}
+
+.modal-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid var(--pixel-border);
+}
+
+.modal-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modal-detail-item:has(.desc) {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  font-size: 10px;
+  color: var(--pixel-text-secondary);
+}
+
+.detail-value {
+  font-size: 13px;
+  color: var(--pixel-text);
+}
+
+.detail-value.highlight {
+  color: var(--pixel-primary);
+  font-weight: 600;
+}
+
+.detail-value.desc {
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.modal-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.modal-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border: 2px solid var(--pixel-border);
+  color: var(--pixel-text-secondary);
+  background: var(--pixel-bg);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 3px solid var(--pixel-border);
+  justify-content: flex-end;
+}
+
+.pixel-btn {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 11px;
+  padding: 8px 16px;
+  border: 3px solid var(--pixel-border);
+  background: var(--pixel-bg);
+  color: var(--pixel-text);
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
+  transition: transform 0.08s ease, box-shadow 0.15s ease;
+}
+
+.pixel-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
+}
+
+.pixel-btn.primary {
+  background: var(--pixel-primary);
+  border-color: var(--pixel-primary);
+  color: var(--pixel-bg);
+}
+
+.pixel-btn.primary:hover {
+  box-shadow: 3px 3px 0 var(--pixel-shadow), 0 0 6px rgba(65, 166, 246, 0.3);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .main-layout {
@@ -1152,10 +1511,24 @@ onUnmounted(() => {
   .speech-bubble {
     display: none;
   }
+
+  .modal-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 @keyframes pixel-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+@keyframes pixel-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pixel-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 </style>

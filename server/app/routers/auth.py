@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import (
     PasswordChange,
+    PortraitUploadResponse,
+    ProfileUpdate,
     RefreshTokenRequest,
     TokenResponse,
     UserCreate,
@@ -16,7 +18,9 @@ from app.services.auth import (
     authenticate_user,
     change_password,
     register_user,
+    update_profile,
     update_user,
+    upload_portrait,
 )
 from app.utils.deps import get_current_user
 from app.utils.security import (
@@ -131,3 +135,22 @@ async def update_password(
             detail="Old password is incorrect",
         )
     return {"message": "password changed"}
+
+
+@router.put("/profile", response_model=UserResponse)
+async def update_user_profile(
+    data: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    return await update_profile(db, current_user, data)
+
+
+@router.post("/portrait", response_model=PortraitUploadResponse)
+async def upload_user_portrait(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> PortraitUploadResponse:
+    url = await upload_portrait(db, current_user, file)
+    return PortraitUploadResponse(url=url)

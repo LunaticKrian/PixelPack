@@ -34,7 +34,7 @@ async function handleRegister() {
       password: password.value,
       email: email.value || undefined,
     })
-    router.push('/')
+    router.push('/character/create')
   } catch (e: any) {
     error.value = e?.data?.detail || '注册失败，请稍后重试'
   } finally {
