@@ -9,6 +9,8 @@ import { getItem } from '../api/items'
 import type { Item } from '../types/item'
 import { getQuestSummary } from '../api/quests'
 import type { QuestSummary, Achievement } from '../types/quest'
+import { listJournals, createJournal, deleteJournal } from '../api/journals'
+import type { Journal } from '../types/journal'
 import { formatCurrency, formatDays } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import CharacterInfoModal from '../components/CharacterInfoModal.vue'
@@ -60,6 +62,12 @@ const recentItems = ref<RecentItem[]>([])
 const warrantyAlerts = ref<WarrantyAlert[]>([])
 const questSummary = ref<QuestSummary | null>(null)
 
+// Journal state
+const journals = ref<Journal[]>([])
+const showJournalForm = ref(false)
+const journalForm = ref({ title: '', content: '', category: 'general', icon: '◈' })
+const expandedJournalId = ref<number | null>(null)
+
 const hoveredAch = ref<Achievement | null>(null)
 const achTooltipStyle = ref<Record<string, string>>({})
 
@@ -102,16 +110,18 @@ function onAchLeave() {
 async function loadAll() {
   loading.value = true
   try {
-    const [ov, recent, warranty, qs] = await Promise.all([
+    const [ov, recent, warranty, qs, jrnl] = await Promise.all([
       getOverview(),
       getRecentItems(5),
       getWarrantyAlerts(30),
       getQuestSummary(),
+      listJournals(20),
     ])
     overview.value = ov
     recentItems.value = recent
     warrantyAlerts.value = warranty
     questSummary.value = qs
+    journals.value = jrnl
   } catch (e) {
     console.error('Dashboard load error', e)
   } finally {
@@ -125,6 +135,54 @@ function goToItem(id: number) {
 
 function goToItems() {
   router.push('/items')
+}
+
+// ── Journal helpers ──────────────────────────────────────────────────
+async function submitJournal() {
+  if (!journalForm.value.title.trim()) return
+  try {
+    const entry = await createJournal(journalForm.value)
+    journals.value.unshift(entry)
+    showJournalForm.value = false
+    journalForm.value = { title: '', content: '', category: 'general', icon: '◈' }
+  } catch (e) {
+    console.error('Create journal error', e)
+  }
+}
+
+async function removeJournal(id: number) {
+  try {
+    await deleteJournal(id)
+    journals.value = journals.value.filter(j => j.id !== id)
+  } catch (e) {
+    console.error('Delete journal error', e)
+  }
+}
+
+function toggleJournalExpand(id: number) {
+  expandedJournalId.value = expandedJournalId.value === id ? null : id
+}
+
+function formatJournalTime(dateStr: string): string {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 1) return '刚刚'
+  if (diffMin < 60) return `${diffMin}分钟前`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}小时前`
+  const diffDay = Math.floor(diffHr / 24)
+  if (diffDay < 7) return `${diffDay}天前`
+  return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+}
+
+function categoryLabel(cat: string): string {
+  const map: Record<string, string> = {
+    item_event: '物品', quest_event: '任务', achievement_event: '成就',
+    general: '日常', custom: '自定义',
+  }
+  return map[cat] || cat
 }
 
 // ── Speech Bubble ──────────────────────────────────────────────────────
@@ -369,6 +427,67 @@ onUnmounted(() => {
         </Teleport>
       </div>
 
+      <!-- ====== MIDDLE: Journal Column ====== -->
+      <div class="journal-panel pixel-border">
+        <div class="journal-header">
+          <div class="journal-header-title">
+            <span class="jh-icon">◈</span>
+            <span>冒险日志</span>
+          </div>
+          <button class="journal-add-btn" @click="showJournalForm = !showJournalForm" title="新日志">+</button>
+        </div>
+
+        <div v-if="showJournalForm" class="journal-form">
+          <input
+            v-model="journalForm.title"
+            class="journal-form-input"
+            placeholder="日志标题..."
+            maxlength="200"
+          />
+          <textarea
+            v-model="journalForm.content"
+            class="journal-form-textarea"
+            placeholder="详细内容 (可选)..."
+            rows="3"
+          ></textarea>
+          <div class="journal-form-actions">
+            <button class="pixel-btn primary" @click="submitJournal">记录</button>
+            <button class="pixel-btn" @click="showJournalForm = false">取消</button>
+          </div>
+        </div>
+
+        <div class="journal-list">
+          <div v-if="journals.length === 0" class="empty-hint">暂无日志</div>
+          <div
+            v-for="entry in journals"
+            :key="entry.id"
+            class="journal-entry"
+            :class="[entry.type, { expanded: expandedJournalId === entry.id }]"
+            @click="toggleJournalExpand(entry.id)"
+          >
+            <div class="je-top-row">
+              <span class="je-icon" :class="entry.category">{{ entry.icon }}</span>
+              <div class="je-main">
+                <div class="je-title">{{ entry.title }}</div>
+                <div class="je-meta">
+                  <span class="je-category">{{ categoryLabel(entry.category) }}</span>
+                  <span class="je-time">{{ formatJournalTime(entry.created_at) }}</span>
+                </div>
+              </div>
+              <button
+                v-if="entry.type === 'manual'"
+                class="je-delete"
+                @click.stop="removeJournal(entry.id)"
+                title="删除"
+              >✕</button>
+            </div>
+            <div v-if="entry.content && expandedJournalId === entry.id" class="je-content">
+              {{ entry.content }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ====== RIGHT: System Menu + Info ====== -->
       <div class="side-panel">
         <!-- System Menu -->
@@ -557,8 +676,8 @@ onUnmounted(() => {
 /* ===== Main Layout: Left + Right ===== */
 .main-layout {
   display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 20px;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -574,7 +693,7 @@ onUnmounted(() => {
 /* Top Row: Portrait | Data */
 .char-top-row {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
   align-items: start;
 }
@@ -995,6 +1114,212 @@ onUnmounted(() => {
   font-size: 9px;
   color: var(--pixel-border);
   margin-top: 4px;
+}
+
+/* ===== Journal Panel (Middle) ===== */
+.journal-panel {
+  background: var(--pixel-card-bg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.journal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--pixel-border);
+  margin-bottom: 10px;
+}
+
+.journal-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--pixel-text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.jh-icon { color: var(--pixel-primary); font-size: 12px; }
+
+.journal-add-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pixel-bg);
+  border: 2px solid var(--pixel-primary);
+  color: var(--pixel-primary);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.journal-add-btn:hover {
+  background: var(--pixel-primary);
+  color: var(--pixel-bg);
+}
+
+.journal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--pixel-bg);
+  border: 2px solid var(--pixel-border);
+  margin-bottom: 10px;
+}
+
+.journal-form-input,
+.journal-form-textarea {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 12px;
+  color: var(--pixel-text);
+  background: var(--pixel-bg-secondary);
+  border: 2px solid var(--pixel-border);
+  padding: 8px;
+  resize: none;
+  width: 100%;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.journal-form-input:focus,
+.journal-form-textarea:focus {
+  border-color: var(--pixel-primary);
+  box-shadow: 0 0 0 1px var(--pixel-primary);
+}
+
+.journal-form-input::placeholder,
+.journal-form-textarea::placeholder {
+  color: var(--pixel-text-secondary);
+  opacity: 0.5;
+}
+
+.journal-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.journal-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.journal-entry {
+  background: var(--pixel-bg);
+  border: 2px solid var(--pixel-border);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: border-color 0.1s ease;
+}
+
+.journal-entry:hover {
+  border-color: var(--pixel-primary);
+}
+
+.journal-entry.system {
+  border-left: 3px solid var(--pixel-info);
+}
+
+.journal-entry.manual {
+  border-left: 3px solid var(--pixel-warning);
+}
+
+.journal-entry.expanded {
+  border-color: var(--pixel-primary);
+}
+
+.je-top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.je-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.je-icon.item_event { color: var(--pixel-primary); }
+.je-icon.quest_event { color: var(--pixel-success); }
+.je-icon.achievement_event { color: var(--pixel-warning); }
+.je-icon.general { color: var(--pixel-text-secondary); }
+
+.je-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.je-title {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pixel-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journal-entry.expanded .je-title {
+  white-space: normal;
+}
+
+.je-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.je-category {
+  font-size: 9px;
+  color: var(--pixel-text-secondary);
+  opacity: 0.7;
+}
+
+.je-time {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--pixel-text-secondary);
+  opacity: 0.5;
+}
+
+.je-delete {
+  background: none;
+  border: none;
+  color: var(--pixel-text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 4px;
+  opacity: 0;
+  transition: opacity 0.1s ease, color 0.1s ease;
+}
+
+.journal-entry:hover .je-delete { opacity: 1; }
+.je-delete:hover { color: var(--pixel-accent); }
+
+.je-content {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 11px;
+  color: var(--pixel-text-secondary);
+  line-height: 1.5;
+  padding-top: 6px;
+  margin-top: 6px;
+  border-top: 1px dashed var(--pixel-border);
+  white-space: pre-wrap;
 }
 
 /* ===== Side Panel (Right) ===== */
@@ -1503,6 +1828,16 @@ onUnmounted(() => {
 }
 
 /* ===== Responsive ===== */
+@media (max-width: 1100px) {
+  .main-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+  .journal-panel {
+    grid-column: 1 / -1;
+    max-height: 360px;
+  }
+}
+
 @media (max-width: 900px) {
   .main-layout {
     grid-template-columns: 1fr;
@@ -1529,6 +1864,11 @@ onUnmounted(() => {
 
   .modal-columns {
     grid-template-columns: 1fr;
+  }
+
+  .journal-panel {
+    grid-column: auto;
+    max-height: none;
   }
 }
 

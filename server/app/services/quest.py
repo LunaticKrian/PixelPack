@@ -113,6 +113,8 @@ async def increment_quest_progress(
         quest.completed = True
         await _add_quest_exp(db, user_id, quest.exp_reward)
         await db.flush()
+        from app.services.journal import create_system_journal as _log
+        await _log(db, user_id, category="quest_event", icon="▣", title=f"任务完成: {quest.quest_key}")
         return True
 
     await db.flush()
@@ -177,6 +179,14 @@ async def unlock_achievement(
         await _add_quest_exp(db, user_id, exp)
 
     await db.flush()
+    from app.services.journal import create_system_journal as _log
+    await _log(
+        db, user_id,
+        category="achievement_event",
+        icon=defn.get("icon", "?"),
+        title=f"成就解锁: {defn.get('name', achievement_id)}",
+        content=defn.get("desc"),
+    )
     return True
 
 

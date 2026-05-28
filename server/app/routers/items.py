@@ -124,6 +124,8 @@ async def create_new_item(
     from app.services.quest import increment_quest_progress as _qp, check_achievements as _ca
     await _qp(db, current_user.id, "ADD_ITEMS")
     await _ca(db, current_user.id)
+    from app.services.journal import create_system_journal as _log
+    await _log(db, current_user.id, category="item_event", icon="◆", title=f"新增物品: {item.name}")
     return _item_to_response(item)
 
 

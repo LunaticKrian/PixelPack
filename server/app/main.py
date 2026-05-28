@@ -14,12 +14,13 @@ from app.models import (  # noqa: F401 – ensure tables are created
     DailyQuest,
     Item,
     ItemImage,
+    Journal,
     Tag,
     User,
     UserAchievement,
     item_tags,
 )
-from app.routers import auth, categories, items, quests, stats, tags
+from app.routers import auth, categories, items, journals, quests, stats, tags
 
 
 @asynccontextmanager
@@ -54,6 +55,7 @@ app.include_router(tags.router)
 app.include_router(items.router)
 app.include_router(stats.router)
 app.include_router(quests.router)
+app.include_router(journals.router)
 
 # ── Static Files ───────────────────────────────────────────────────────
 UPLOAD_DIR = getattr(settings, 'upload_dir', 'uploads')
