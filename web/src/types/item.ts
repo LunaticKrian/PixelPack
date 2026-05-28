@@ -16,6 +16,7 @@ export interface Item {
   usage_count: number | null
   retired_at: string | null
   retired_reason: string | null
+  deleted_at: string | null
   created_at: string
   updated_at: string
   // computed fields from backend

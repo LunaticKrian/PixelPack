@@ -10,7 +10,7 @@ const route = useRoute()
 
 const isEdit = computed(() => !!route.params.id)
 const itemId = computed(() => route.params.id ? Number(route.params.id) : null)
-const pageTitle = computed(() => isEdit.value ? 'EDIT ITEM' : 'NEW ITEM')
+const pageTitle = computed(() => isEdit.value ? '编辑物品' : '新增物品')
 const pageIcon = computed(() => isEdit.value ? '✎' : '▶')
 
 // Metadata
@@ -91,11 +91,9 @@ async function loadItem() {
       warranty_expiry: item.warranty_expiry ? item.warranty_expiry.slice(0, 10) : '',
       expected_lifespan: item.expected_lifespan != null ? String(item.expected_lifespan) : '',
       usage_count: item.usage_count != null ? String(item.usage_count) : '',
-      tag_ids: [],
+      tag_ids: (item.tags || []).map((t: any) => t.id),
     }
-    // Note: tags would need a separate endpoint or be included in item response
-    // For now we load tag_ids if available
-    existingImages.value = []
+    existingImages.value = item.images || []
   } catch (e: any) {
     error.value = e?.data?.detail || '加载物品信息失败'
   } finally {
@@ -226,7 +224,7 @@ onMounted(async () => {
     <!-- Page loading -->
     <div v-if="pageLoading" class="loading-container">
       <div class="pixel-loading"></div>
-      <p class="loading-text">LOADING...</p>
+      <p class="loading-text">加载中...</p>
     </div>
 
     <template v-else>
@@ -251,7 +249,7 @@ onMounted(async () => {
 
           <div class="field">
             <label class="field-label">
-              <span class="label-bracket">[</span>NAME<span class="label-bracket">]</span>
+              <span class="label-bracket">[</span>名称<span class="label-bracket">]</span>
               <span class="required">*</span>
             </label>
             <input
@@ -266,7 +264,7 @@ onMounted(async () => {
 
           <div class="field">
             <label class="field-label">
-              <span class="label-bracket">[</span>DESCRIPTION<span class="label-bracket">]</span>
+              <span class="label-bracket">[</span>描述<span class="label-bracket">]</span>
             </label>
             <textarea
               v-model="form.description"
@@ -278,7 +276,7 @@ onMounted(async () => {
 
           <div class="field">
             <label class="field-label">
-              <span class="label-bracket">[</span>CATEGORY<span class="label-bracket">]</span>
+              <span class="label-bracket">[</span>分类<span class="label-bracket">]</span>
             </label>
             <select v-model="form.category_id" class="pixel-input pixel-select">
               <option :value="null">— 选择分类 —</option>
@@ -295,7 +293,7 @@ onMounted(async () => {
 
           <div class="field">
             <label class="field-label">
-              <span class="label-bracket">[</span>PURCHASE DATE<span class="label-bracket">]</span>
+              <span class="label-bracket">[</span>购买日期<span class="label-bracket">]</span>
               <span class="required">*</span>
             </label>
             <input
@@ -309,7 +307,7 @@ onMounted(async () => {
           <div class="inline-group">
             <div class="field flex-grow">
               <label class="field-label">
-                <span class="label-bracket">[</span>PRICE<span class="label-bracket">]</span>
+                <span class="label-bracket">[</span>价格<span class="label-bracket">]</span>
                 <span class="required">*</span>
               </label>
               <input
@@ -325,7 +323,7 @@ onMounted(async () => {
 
             <div class="field field-currency">
               <label class="field-label">
-                <span class="label-bracket">[</span>CURRENCY<span class="label-bracket">]</span>
+                <span class="label-bracket">[</span>币种<span class="label-bracket">]</span>
               </label>
               <select v-model="form.currency" class="pixel-input pixel-select">
                 <option value="CNY">CNY ¥</option>
@@ -338,7 +336,7 @@ onMounted(async () => {
 
           <div class="field">
             <label class="field-label">
-              <span class="label-bracket">[</span>CHANNEL<span class="label-bracket">]</span>
+              <span class="label-bracket">[</span>购买渠道<span class="label-bracket">]</span>
             </label>
             <input
               v-model="form.purchase_channel"
@@ -357,7 +355,7 @@ onMounted(async () => {
           <div class="inline-group">
             <div class="field flex-grow">
               <label class="field-label">
-                <span class="label-bracket">[</span>CURRENT VALUE<span class="label-bracket">]</span>
+                <span class="label-bracket">[</span>当前价值<span class="label-bracket">]</span>
               </label>
               <input
                 v-model="form.current_value"
@@ -371,7 +369,7 @@ onMounted(async () => {
 
             <div class="field flex-grow">
               <label class="field-label">
-                <span class="label-bracket">[</span>USAGE COUNT<span class="label-bracket">]</span>
+                <span class="label-bracket">[</span>使用次数<span class="label-bracket">]</span>
               </label>
               <input
                 v-model="form.usage_count"
@@ -386,7 +384,7 @@ onMounted(async () => {
           <div class="inline-group">
             <div class="field flex-grow">
               <label class="field-label">
-                <span class="label-bracket">[</span>WARRANTY EXPIRY<span class="label-bracket">]</span>
+                <span class="label-bracket">[</span>保修到期<span class="label-bracket">]</span>
               </label>
               <input
                 v-model="form.warranty_expiry"
@@ -397,7 +395,7 @@ onMounted(async () => {
 
             <div class="field flex-grow">
               <label class="field-label">
-                <span class="label-bracket">[</span>LIFESPAN (DAYS)<span class="label-bracket">]</span>
+                <span class="label-bracket">[</span>预期寿命(天)<span class="label-bracket">]</span>
               </label>
               <input
                 v-model="form.expected_lifespan"
@@ -476,8 +474,8 @@ onMounted(async () => {
             <div v-if="uploadProgress" class="pixel-loading"></div>
             <template v-else>
               <div class="upload-icon">📤</div>
-              <p class="upload-text">DROP IMAGE HERE</p>
-              <p class="upload-subtext">or click to browse</p>
+              <p class="upload-text">拖拽图片到此处</p>
+              <p class="upload-subtext">或点击选择</p>
             </template>
           </div>
           <input
@@ -494,10 +492,10 @@ onMounted(async () => {
         <div class="form-actions">
           <button type="submit" class="btn-save pixel-btn-glow" :disabled="loading">
             <span v-if="loading" class="pixel-loading inline"></span>
-            <span v-else>▶ SAVE</span>
+            <span v-else>▶ 保存</span>
           </button>
           <button type="button" class="btn-cancel" :disabled="loading" @click="handleCancel">
-            ✕ CANCEL
+            ✕ 取消
           </button>
         </div>
       </form>
@@ -510,7 +508,7 @@ onMounted(async () => {
   max-width: 680px;
   margin: 0 auto;
   padding: 24px 16px 48px;
-  animation: pixel-fade-in 0.3s steps(4);
+  animation: pixel-fade-in 0.3s ease-out;
 }
 
 /* Loading */

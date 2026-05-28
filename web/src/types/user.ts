@@ -3,6 +3,11 @@ export interface User {
   username: string
   email: string | null
   avatar_url: string | null
+  character_name: string | null
+  portrait_url: string | null
+  character_class: string | null
+  birthday: string | null
+  profile_completed: boolean
   created_at: string
 }
 
@@ -31,4 +36,10 @@ export interface PasswordChange {
 export interface UserUpdate {
   email?: string
   avatar_url?: string
+}
+
+export interface ProfileUpdate {
+  character_name?: string
+  character_class?: string
+  birthday?: string
 }

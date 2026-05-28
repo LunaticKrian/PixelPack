@@ -13,6 +13,7 @@ from app.schemas.item import (
     CostResponse,
     CostUpdate,
     ItemCreate,
+    ItemImageResponse,
     ItemListResponse,
     ItemResponse,
     ItemUpdate,
@@ -28,7 +29,11 @@ from app.services.item import (
     get_cost_by_id,
     get_image_by_id,
     get_item_by_id,
+    get_trashed_item_by_id,
     list_items,
+    list_trashed_items,
+    permanent_delete_item,
+    restore_item,
     soft_delete_item,
     update_cost,
     update_item,
@@ -113,10 +118,34 @@ async def create_new_item(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ItemResponse:
-    # Refresh with relationships loaded
     item = await create_item(db, current_user.id, data)
     item = await get_item_by_id(db, item.id, current_user.id)
+    # Quest tracking
+    from app.services.quest import increment_quest_progress as _qp, check_achievements as _ca
+    await _qp(db, current_user.id, "ADD_ITEMS")
+    await _ca(db, current_user.id)
+    from app.services.journal import create_system_journal as _log
+    await _log(db, current_user.id, category="item_event", icon="◆", title=f"新增物品: {item.name}")
     return _item_to_response(item)
+
+
+# ── Trash ──────────────────────────────────────────────────────────────
+@router.get("/trash", response_model=ItemListResponse)
+async def get_trashed_items(
+    page: int = 1,
+    page_size: int = 20,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ItemListResponse:
+    items, total = await list_trashed_items(db, current_user.id, page=page, page_size=page_size)
+    pages = math.ceil(total / page_size) if page_size > 0 else 0
+    return ItemListResponse(
+        items=[_item_to_response(i) for i in items],
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=pages,
+    )
 
 
 @router.get("/{item_id}", response_model=ItemResponse)
@@ -142,8 +171,10 @@ async def update_existing_item(
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     await update_item(db, item, data)
-    # Reload with relationships
     item = await get_item_by_id(db, item_id, current_user.id)
+    # Quest tracking
+    from app.services.quest import increment_quest_progress as _qp
+    await _qp(db, current_user.id, "EDIT_ITEM")
     return _item_to_response(item)
 
 
@@ -157,6 +188,32 @@ async def delete_existing_item(
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     await soft_delete_item(db, item)
+
+
+@router.patch("/{item_id}/restore", response_model=ItemResponse)
+async def restore_trashed_item(
+    item_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ItemResponse:
+    item = await get_trashed_item_by_id(db, item_id, current_user.id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found in trash")
+    await restore_item(db, item)
+    item = await get_item_by_id(db, item_id, current_user.id)
+    return _item_to_response(item)
+
+
+@router.delete("/{item_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+async def permanent_delete_existing_item(
+    item_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    item = await get_trashed_item_by_id(db, item_id, current_user.id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found in trash")
+    await permanent_delete_item(db, item)
 
 
 @router.patch("/{item_id}/status", response_model=ItemResponse)
@@ -216,14 +273,13 @@ async def delete_existing_cost(
 
 
 # ── Images ─────────────────────────────────────────────────────────────
-@router.post("/{item_id}/images", response_model=CostResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{item_id}/images", response_model=ItemImageResponse, status_code=status.HTTP_201_CREATED)
 async def upload_image(
     item_id: int,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> dict:
-    from app.schemas.item import ItemImageResponse
+):
 
     item = await get_item_by_id(db, item_id, current_user.id)
     if item is None:

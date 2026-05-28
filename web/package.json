@@ -11,6 +11,7 @@
   "dependencies": {
     "@pixelium/web-vue": "^0.1.4",
     "echarts": "^6.1.0",
+    "md-editor-v3": "^6.5.1",
     "nes.css": "^2.2.1",
     "ofetch": "^1.5.1",
     "pinia": "^3.0.4",

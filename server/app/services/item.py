@@ -133,6 +133,61 @@ async def soft_delete_item(db: AsyncSession, item: Item) -> Item:
     return item
 
 
+async def restore_item(db: AsyncSession, item: Item) -> Item:
+    item.deleted_at = None
+    db.add(item)
+    await db.flush()
+    await db.refresh(item)
+    return item
+
+
+async def permanent_delete_item(db: AsyncSession, item: Item) -> None:
+    await db.delete(item)
+    await db.flush()
+
+
+async def get_trashed_item_by_id(
+    db: AsyncSession, item_id: int, user_id: int,
+) -> Item | None:
+    stmt = (
+        select(Item)
+        .options(
+            selectinload(Item.tags),
+            selectinload(Item.images),
+            selectinload(Item.additional_costs),
+        )
+        .where(Item.id == item_id, Item.user_id == user_id, Item.deleted_at.isnot(None))
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def list_trashed_items(
+    db: AsyncSession, user_id: int, *, page: int = 1, page_size: int = 20,
+) -> tuple[list[Item], int]:
+    conditions = [Item.user_id == user_id, Item.deleted_at.isnot(None)]
+    where = and_(*conditions)
+
+    count_stmt = select(func.count()).select_from(Item).where(where)
+    total = (await db.execute(count_stmt)).scalar_one()
+
+    stmt: Select = (
+        select(Item)
+        .options(
+            selectinload(Item.tags),
+            selectinload(Item.images),
+            selectinload(Item.additional_costs),
+        )
+        .where(where)
+        .order_by(Item.deleted_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    result = await db.execute(stmt)
+    items = list(result.scalars().all())
+    return items, total
+
+
 async def change_status(
     db: AsyncSession,
     item: Item,

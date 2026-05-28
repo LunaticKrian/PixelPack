@@ -2,6 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { listCategories, createCategory, updateCategory, deleteCategory } from '../api/metadata'
 import type { Category } from '../types/item'
+import { useNotifyStore } from '../stores/notification'
+
+const notify = useNotifyStore()
 
 interface CategoryForm {
   name: string
@@ -100,8 +103,10 @@ async function handleCreate() {
     categories.value.push(newCat)
     showCreateForm.value = false
     resetCreateForm()
+    notify.success('分类已创建')
   } catch (e: any) {
     createError.value = '创建失败，请重试'
+    notify.error(createError.value)
     console.error('Create category error', e)
   } finally {
     creating.value = false
@@ -139,8 +144,10 @@ async function handleSave() {
     const idx = categories.value.findIndex(c => c.id === updated.id)
     if (idx !== -1) categories.value[idx] = updated
     resetEditForm()
+    notify.success('分类已更新')
   } catch (e: any) {
     editError.value = '保存失败，请重试'
+    notify.error(editError.value)
     console.error('Update category error', e)
   } finally {
     saving.value = false
@@ -160,6 +167,7 @@ async function handleDelete() {
     await deleteCategory(deleteTarget.value.id)
     categories.value = categories.value.filter(c => c.id !== deleteTarget.value!.id)
     deleteTarget.value = null
+    notify.success('分类已删除')
   } catch (e: any) {
     if (e?.response?.status === 400) {
       deleteError.value = '该分类下存在物品，无法删除'
@@ -193,7 +201,7 @@ onMounted(loadCategories)
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="pixel-loading"></div>
-      <span class="loading-text">LOADING...</span>
+      <span class="loading-text">加载中...</span>
     </div>
 
     <!-- Error -->
@@ -793,6 +801,7 @@ onMounted(loadCategories)
   display: flex;
   flex-direction: column;
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
   overflow: hidden;
 }
 

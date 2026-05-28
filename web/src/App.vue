@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AuthLayout from './layouts/AuthLayout.vue'
 import MainLayout from './layouts/MainLayout.vue'
+import ToastNotification from './components/ToastNotification.vue'
 
 const route = useRoute()
 const layout = computed(() => {
@@ -18,4 +19,5 @@ const layout = computed(() => {
       </transition>
     </router-view>
   </component>
+  <ToastNotification />
 </template>

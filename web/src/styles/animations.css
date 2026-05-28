@@ -86,11 +86,13 @@
 }
 
 .animate-fade-in {
-  animation: pixel-fade-in 0.3s steps(4);
+  animation: pixel-fade-in 0.3s ease-out;
+  will-change: opacity, transform;
 }
 
 .animate-slide-in {
-  animation: pixel-slide-in 0.3s steps(4);
+  animation: pixel-slide-in 0.3s ease-out;
+  will-change: transform;
 }
 
 .animate-press:active {
@@ -99,10 +101,12 @@
 
 .animate-glow {
   animation: pixel-glow-pulse 2s ease-in-out infinite;
+  will-change: box-shadow;
 }
 
 .animate-float {
   animation: pixel-float 2s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-text-glow {
@@ -111,14 +115,17 @@
 
 .animate-scale-in {
   animation: pixel-scale-in 0.25s ease-out;
+  will-change: opacity, transform;
 }
 
 .animate-slide-up {
   animation: pixel-slide-up 0.3s ease-out;
+  will-change: opacity, transform;
 }
 
 .animate-stagger-in {
   animation: pixel-stagger-in 0.3s ease-out backwards;
+  will-change: opacity;
 }
 
 /* ── Loading Spinner ── */
@@ -128,6 +135,7 @@
   border: 3px solid var(--pixel-border);
   border-top-color: var(--pixel-primary);
   animation: pixel-spin 0.8s steps(8) infinite;
+  will-change: transform;
 }
 
 /* ═══════════════════════════════════════════════
@@ -137,6 +145,7 @@
 /* Card hover - border glow only, no transform */
 .pixel-card-hover {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
 }
 .pixel-card-hover:hover {
   border-color: var(--pixel-primary);
@@ -151,6 +160,7 @@
 .pixel-btn-glow {
   transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
   position: relative;
+  will-change: transform;
 }
 .pixel-btn-glow:hover {
   box-shadow: 3px 3px 0 var(--pixel-shadow), 0 0 8px rgba(65, 166, 246, 0.3);
@@ -178,6 +188,7 @@
    ═══════════════════════════════════════════════ */
 .stagger-list > * {
   animation: pixel-stagger-in 0.3s ease-out backwards;
+  will-change: opacity;
 }
 .stagger-list > *:nth-child(1) { animation-delay: 0.03s; }
 .stagger-list > *:nth-child(2) { animation-delay: 0.06s; }
@@ -196,9 +207,11 @@
    ═══════════════════════════════════════════════ */
 .route-enter-active {
   transition: opacity 0.2s ease;
+  will-change: opacity;
 }
 .route-leave-active {
   transition: opacity 0.12s ease;
+  will-change: opacity;
 }
 .route-enter-from {
   opacity: 0;
@@ -210,9 +223,11 @@
 /* Modal transitions */
 .modal-enter-active {
   animation: pixel-scale-in 0.2s ease-out;
+  will-change: opacity, transform;
 }
 .modal-leave-active {
   animation: pixel-scale-in 0.15s ease-in reverse;
+  will-change: opacity, transform;
 }
 
 /* Fade transition */

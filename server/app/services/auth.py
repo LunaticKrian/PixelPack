@@ -1,9 +1,13 @@
-from fastapi import HTTPException, status
+import os
+import uuid
+
+from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.user import User
-from app.schemas.auth import UserCreate, UserUpdate
+from app.schemas.auth import ProfileUpdate, UserCreate, UserUpdate
 from app.utils.security import get_password_hash, verify_password
 
 
@@ -94,3 +98,41 @@ async def change_password(
     db.add(user)
     await db.flush()
     return True
+
+
+async def update_profile(
+    db: AsyncSession,
+    user: User,
+    data: ProfileUpdate,
+) -> User:
+    if data.character_name is not None:
+        user.character_name = data.character_name
+    if data.character_class is not None:
+        user.character_class = data.character_class
+    if data.birthday is not None:
+        user.birthday = data.birthday
+    user.profile_completed = True
+    db.add(user)
+    await db.flush()
+    await db.refresh(user)
+    return user
+
+
+async def upload_portrait(
+    db: AsyncSession,
+    user: User,
+    file: UploadFile,
+) -> str:
+    upload_dir = settings.UPLOAD_DIR
+    os.makedirs(upload_dir, exist_ok=True)
+    ext = os.path.splitext(file.filename or "portrait.png")[1]
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(upload_dir, filename)
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    url = f"/uploads/{filename}"
+    user.portrait_url = url
+    db.add(user)
+    await db.flush()
+    return url

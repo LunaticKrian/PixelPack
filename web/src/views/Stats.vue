@@ -351,22 +351,22 @@ onBeforeUnmount(() => {
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="pixel-loading"></div>
-      <span class="loading-text">LOADING...</span>
+      <span class="loading-text">加载中...</span>
     </div>
 
     <template v-else>
       <!-- ═══ Section 1: Time Range Filter Bar ═══ -->
       <div class="filter-bar">
         <div class="filter-group">
-          <label class="filter-label">START</label>
+          <label class="filter-label">开始日期</label>
           <input v-model="startDate" type="date" class="pixel-input" />
         </div>
         <div class="filter-group">
-          <label class="filter-label">END</label>
+          <label class="filter-label">结束日期</label>
           <input v-model="endDate" type="date" class="pixel-input" />
         </div>
         <div class="filter-group">
-          <label class="filter-label">PERIOD</label>
+          <label class="filter-label">周期</label>
           <select v-model="period" class="pixel-input">
             <option value="month">MONTH</option>
             <option value="quarter">QUARTER</option>
@@ -382,51 +382,51 @@ onBeforeUnmount(() => {
           <div class="stat-icon">&#9670;</div>
           <div class="stat-info">
             <div class="stat-value">{{ overview?.total_items ?? 0 }}</div>
-            <div class="stat-label">TOTAL ITEMS</div>
+            <div class="stat-label">物品总数</div>
           </div>
         </div>
         <div class="stat-card accent pixel-card-hover">
           <div class="stat-icon">$</div>
           <div class="stat-info">
             <div class="stat-value">{{ formatCurrency(overview?.total_assets_value ?? 0) }}</div>
-            <div class="stat-label">TOTAL ASSETS</div>
+            <div class="stat-label">资产总值</div>
           </div>
         </div>
         <div class="stat-card primary pixel-card-hover">
           <div class="stat-icon">&#9672;</div>
           <div class="stat-info">
             <div class="stat-value">{{ formatCurrency(overview?.avg_daily_cost ?? 0) }}</div>
-            <div class="stat-label">AVG DAILY COST</div>
+            <div class="stat-label">日均成本</div>
           </div>
         </div>
         <div class="stat-card success pixel-card-hover">
           <div class="stat-icon">&#9654;</div>
           <div class="stat-info">
             <div class="stat-value">{{ overview?.active_items ?? 0 }}</div>
-            <div class="stat-label">ACTIVE ITEMS</div>
+            <div class="stat-label">使用中</div>
           </div>
         </div>
       </div>
 
       <!-- ═══ Section 3: Category Analysis ═══ -->
       <div class="section-card pixel-card-hover">
-        <h3 class="section-title">CATEGORY ANALYSIS</h3>
+        <h3 class="section-title">分类分析</h3>
         <div class="category-layout">
           <!-- Pie chart -->
           <div class="category-chart-col">
-            <div v-if="categoryStats.length === 0" class="chart-empty">NO DATA</div>
+            <div v-if="categoryStats.length === 0" class="chart-empty">暂无数据</div>
             <div v-else ref="pieChartRef" class="chart-container chart-pie"></div>
           </div>
           <!-- Category table -->
           <div class="category-table-col">
-            <div v-if="categoryStats.length === 0" class="chart-empty">NO DATA</div>
+            <div v-if="categoryStats.length === 0" class="chart-empty">暂无数据</div>
             <table v-else class="pixel-table">
               <thead>
                 <tr>
-                  <th>NAME</th>
-                  <th>COUNT</th>
-                  <th>VALUE</th>
-                  <th>AVG/DAY</th>
+                  <th>名称</th>
+                  <th>数量</th>
+                  <th>价值</th>
+                  <th>日均</th>
                 </tr>
               </thead>
               <tbody>
@@ -447,17 +447,17 @@ onBeforeUnmount(() => {
 
       <!-- ═══ Section 4: Cost Analysis ═══ -->
       <div class="section-card pixel-card-hover">
-        <h3 class="section-title">COST ANALYSIS</h3>
+        <h3 class="section-title">成本分析</h3>
         <div class="cost-layout">
           <!-- Daily cost rank bar chart -->
           <div class="cost-rank-col">
-            <div v-if="costRank.length === 0" class="chart-empty">NO DATA</div>
+            <div v-if="costRank.length === 0" class="chart-empty">暂无数据</div>
             <div v-else ref="rankChartRef" class="chart-container chart-rank"></div>
           </div>
           <!-- Status distribution -->
           <div class="cost-status-col">
-            <h4 class="sub-title">STATUS DISTRIBUTION</h4>
-            <div v-if="statusDistribution.length === 0" class="chart-empty-sm">NO DATA</div>
+            <h4 class="sub-title">状态分布</h4>
+            <div v-if="statusDistribution.length === 0" class="chart-empty-sm">暂无数据</div>
             <div v-else class="status-bars">
               <div v-for="s in statusDistribution" :key="s.status" class="status-bar-row">
                 <div class="status-bar-label">{{ s.label }}</div>
@@ -479,22 +479,22 @@ onBeforeUnmount(() => {
 
       <!-- ═══ Section 5: Spending Trends ═══ -->
       <div class="section-card pixel-card-hover">
-        <h3 class="section-title">SPENDING TRENDS</h3>
-        <div v-if="trends.length === 0" class="chart-empty chart-wide">NO DATA</div>
+        <h3 class="section-title">消费趋势</h3>
+        <div v-if="trends.length === 0" class="chart-empty chart-wide">暂无数据</div>
         <div v-else ref="trendChartRef" class="chart-container chart-trend"></div>
       </div>
 
       <!-- ═══ Section 6: Warranty & Lifecycle ═══ -->
       <div class="section-card pixel-card-hover">
-        <h3 class="section-title">WARRANTY &amp; LIFECYCLE</h3>
+        <h3 class="section-title">保修与生命周期</h3>
         <div class="warranty-layout">
           <!-- Warranty alerts -->
           <div class="warranty-col">
             <h4 class="sub-title">
               <span class="title-icon">!</span>
-              WARRANTY ALERTS
+              保修提醒
             </h4>
-            <div v-if="warrantyAlerts.length === 0" class="chart-empty-sm">NO ALERTS</div>
+            <div v-if="warrantyAlerts.length === 0" class="chart-empty-sm">暂无提醒</div>
             <div v-else class="alert-list">
               <div
                 v-for="alert in warrantyAlerts" :key="alert.id"
@@ -519,7 +519,7 @@ onBeforeUnmount(() => {
               <span class="title-icon">&#9632;</span>
               LIFECYCLE SUMMARY
             </h4>
-            <div v-if="lifecycleSummary.length === 0" class="chart-empty-sm">NO DATA</div>
+            <div v-if="lifecycleSummary.length === 0" class="chart-empty-sm">暂无数据</div>
             <div v-else class="lifecycle-list">
               <div v-for="item in lifecycleSummary" :key="item.status" class="lifecycle-item">
                 <div class="lifecycle-header">

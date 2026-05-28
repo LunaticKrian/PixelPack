@@ -37,6 +37,19 @@ export function changeItemStatus(id: number, status: string, reason?: string) {
   return api<Item>(`/items/${id}/status`, { method: 'PATCH', body: { status, reason } })
 }
 
+// Trash
+export function listTrashedItems(params?: { page?: number; page_size?: number }) {
+  return api<PaginatedResponse<Item>>('/items/trash', { params })
+}
+
+export function restoreItem(id: number) {
+  return api<Item>(`/items/${id}/restore`, { method: 'PATCH' })
+}
+
+export function permanentDeleteItem(id: number) {
+  return api<void>(`/items/${id}/permanent`, { method: 'DELETE' })
+}
+
 // Additional costs
 export function listCosts(itemId: number) {
   return api<AdditionalCost[]>(`/items/${itemId}/costs`)

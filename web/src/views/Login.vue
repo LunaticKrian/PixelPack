@@ -35,14 +35,14 @@ async function handleLogin() {
   <div class="login-form">
     <div class="form-title">
       <span class="prompt">></span>
-      <span>LOGIN</span>
+      <span>登录</span>
       <span class="blink-cursor">_</span>
     </div>
 
     <div class="form-fields">
       <div class="field">
         <label class="field-label">
-          <span class="label-bracket">[</span>USERNAME<span class="label-bracket">]</span>
+          <span class="label-bracket">[</span>用户名<span class="label-bracket">]</span>
         </label>
         <input
           v-model="username"
@@ -56,7 +56,7 @@ async function handleLogin() {
 
       <div class="field">
         <label class="field-label">
-          <span class="label-bracket">[</span>PASSWORD<span class="label-bracket">]</span>
+          <span class="label-bracket">[</span>密码<span class="label-bracket">]</span>
         </label>
         <input
           v-model="password"
@@ -76,12 +76,12 @@ async function handleLogin() {
 
     <button class="submit-btn" :disabled="loading" @click="handleLogin">
       <span v-if="loading" class="pixel-loading inline"></span>
-      <span v-else>▶ LOGIN</span>
+      <span v-else>▶ 登录</span>
     </button>
 
     <div class="switch-link">
       <span>还没有账号？</span>
-      <router-link to="/register">REGISTER →</router-link>
+      <router-link to="/register">注册 →</router-link>
     </div>
   </div>
 </template>

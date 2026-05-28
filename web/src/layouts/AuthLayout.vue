@@ -34,7 +34,7 @@
           <h1>DAILY STUFF</h1>
         </div>
         <p class="subtitle">~ 物品管理 ~</p>
-        <div class="insert-coin-text">INSERT COIN TO START</div>
+        <div class="insert-coin-text">投币开始游戏</div>
       </div>
 
       <slot />

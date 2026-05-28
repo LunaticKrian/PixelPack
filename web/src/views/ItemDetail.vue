@@ -223,7 +223,7 @@ onMounted(fetchItem)
     <!-- Loading state -->
     <div v-if="loading" class="loading-state">
       <div class="pixel-loading"></div>
-      <span class="loading-text">LOADING...</span>
+      <span class="loading-text">加载中...</span>
     </div>
 
     <!-- 404 state -->
@@ -564,7 +564,7 @@ onMounted(fetchItem)
   display: flex;
   flex-direction: column;
   gap: 20px;
-  animation: pixel-fade-in 0.3s steps(4);
+  animation: pixel-fade-in 0.3s ease-out;
 }
 
 /* Cards */
@@ -1340,7 +1340,7 @@ onMounted(fetchItem)
   align-items: center;
   justify-content: center;
   z-index: 200;
-  animation: pixel-fade-in 0.15s steps(3);
+  animation: pixel-fade-in 0.15s ease-out;
 }
 
 .modal-card {
