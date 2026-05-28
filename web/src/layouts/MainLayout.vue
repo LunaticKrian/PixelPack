@@ -58,7 +58,7 @@ function handleLogout() {
     <footer class="hud-bottom">
       <div class="bottom-left">
         <span class="user-icon">☺</span>
-        <span class="user-name">{{ auth.user?.username }}</span>
+        <router-link to="/settings" class="user-name">{{ auth.user?.username }}</router-link>
       </div>
       <div class="bottom-right">
         <span class="breadcrumb">
@@ -265,6 +265,12 @@ function handleLogout() {
 .user-name {
   font-family: var(--font-pixel), 'Ark Pixel', monospace;
   color: var(--pixel-text-secondary);
+  text-decoration: none;
+  transition: color 0.12s ease;
+}
+
+.user-name:hover {
+  color: var(--pixel-primary);
 }
 
 .bottom-right {

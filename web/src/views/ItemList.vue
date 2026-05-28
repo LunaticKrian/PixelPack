@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { listItems, getItem, createItem, updateItem, uploadImage, deleteImage, type ItemListParams } from '../api/items'
+import { listItems, getItem, createItem, updateItem, uploadImage, deleteImage, listTrashedItems, restoreItem, permanentDeleteItem, type ItemListParams } from '../api/items'
 import { listCategories, listTags } from '../api/metadata'
 import { getOverview, getByCategory, getRecentItems, getWarrantyAlerts, type OverviewStats, type CategoryStat, type RecentItem, type WarrantyAlert } from '../api/stats'
 import type { Item, Category, Tag, ItemImage, AdditionalCost } from '../types/item'
 import type { PaginatedResponse } from '../types/api'
 import { formatCurrency, formatDays } from '../utils/format'
+import { exportItemsCSV } from '../utils/export'
+import { reportProgress } from '../api/quests'
 import Categories from './Categories.vue'
 import Tags from './Tags.vue'
 import Stats from './Stats.vue'
 import PixelSelect from '../components/PixelSelect.vue'
 import PixelDatePicker from '../components/PixelDatePicker.vue'
+import { useNotifyStore } from '../stores/notification'
+import { useAuthStore } from '../stores/auth'
+
+const notify = useNotifyStore()
+const auth = useAuthStore()
 
 const categoryOptions = computed(() =>
   categories.value.map(c => ({ value: c.id, label: (c.icon ? c.icon + ' ' : '') + c.name }))
@@ -91,10 +98,71 @@ const activeModal = ref<'categories' | 'tags' | 'stats' | null>(null)
 
 function openModal(type: 'categories' | 'tags' | 'stats') {
   activeModal.value = type
+  if (type === 'stats') {
+    reportProgress('REVIEW_STATS').catch(() => {})
+  }
 }
 
 function closeModal() {
   activeModal.value = null
+}
+
+// --- Trash Modal ---
+const showTrashModal = ref(false)
+const trashItems = ref<Item[]>([])
+const trashTotal = ref(0)
+const trashPage = ref(1)
+const trashPages = ref(1)
+const trashLoading = ref(false)
+
+async function openTrashModal() {
+  showTrashModal.value = true
+  trashPage.value = 1
+  await fetchTrashItems()
+}
+
+async function fetchTrashItems() {
+  trashLoading.value = true
+  try {
+    const res = await listTrashedItems({ page: trashPage.value, page_size: 20 })
+    trashItems.value = res.items || []
+    trashTotal.value = res.total
+    trashPages.value = res.pages
+  } catch {
+    notify.error('加载回收站失败')
+  } finally {
+    trashLoading.value = false
+  }
+}
+
+async function handleRestore(id: number) {
+  try {
+    await restoreItem(id)
+    notify.success('物品已恢复')
+    await fetchTrashItems()
+    fetchItems()
+    fetchMetadata()
+  } catch {
+    notify.error('恢复失败')
+  }
+}
+
+async function handlePermanentDelete(id: number) {
+  if (!window.confirm('彻底删除不可恢复，确认？')) return
+  try {
+    await permanentDeleteItem(id)
+    notify.success('物品已彻底删除')
+    await fetchTrashItems()
+    fetchMetadata()
+  } catch {
+    notify.error('删除失败')
+  }
+}
+
+function goToTrashPage(page: number) {
+  if (page < 1 || page > trashPages.value) return
+  trashPage.value = page
+  fetchTrashItems()
 }
 
 // --- Create/Edit Item Modal ---
@@ -267,11 +335,13 @@ async function handleFormSubmit() {
     closeFormModal()
     fetchItems()
     fetchMetadata()
+    notify.success(wasEdit ? '物品已更新' : '物品已创建')
     if (wasEdit && editId) {
       openItemDetail(editId)
     }
   } catch (e: any) {
     createError.value = e?.data?.detail || '保存失败，请重试'
+    notify.error(createError.value)
   } finally {
     createLoading.value = false
     uploadProgress.value = false
@@ -396,6 +466,7 @@ async function openItemDetail(id: number) {
     detailItem.value = res
     detailImages.value = (res as any).images || []
     detailCosts.value = (res as any).additional_costs || []
+    reportProgress('VIEW_ITEMS').catch(() => {})
   } catch (e: any) {
     error.value = e?.data?.detail || '加载物品详情失败'
     showDetailModal.value = false
@@ -444,6 +515,25 @@ function onSearchInput() {
   }, 400)
 }
 
+// --- Export ---
+const exporting = ref(false)
+async function handleExport() {
+  exporting.value = true
+  try {
+    const params: ItemListParams = { page: 1, page_size: 20, sort_by: 'created_at', order: 'desc' }
+    if (keyword.value.trim()) params.keyword = keyword.value.trim()
+    if (filterCategory.value !== '') params.category_id = filterCategory.value
+    if (filterStatus.value !== '') params.status = filterStatus.value
+    if (filterTag.value !== '') params.tag_id = filterTag.value
+    await exportItemsCSV(params)
+    notify.success('导出成功')
+  } catch {
+    notify.error('导出失败')
+  } finally {
+    exporting.value = false
+  }
+}
+
 // --- Computed for detail modal ---
 const totalAdditionalCosts = ref(0)
 watch(detailCosts, (costs) => {
@@ -477,7 +567,7 @@ onMounted(() => {
             <img src="/img/portrait.png" alt="Character" class="pc-img" />
           </div>
           <div class="pc-info">
-            <div class="pc-name">冒险者 Krian</div>
+            <div class="pc-name">冒险者 {{ auth.user?.username }}</div>
             <div class="pc-level">Lv.{{ overview?.total_items ?? 0 }}</div>
           </div>
         </div>
@@ -660,6 +750,8 @@ onMounted(() => {
             <button class="toolbar-btn" @click="openModal('categories')" title="分类管理">▦</button>
             <button class="toolbar-btn" @click="openModal('tags')" title="标签管理">◎</button>
             <button class="toolbar-btn" @click="openModal('stats')" title="数据统计">▤</button>
+            <button class="toolbar-btn" :disabled="exporting" @click="handleExport" title="导出CSV">⤓</button>
+            <button class="toolbar-btn" @click="openTrashModal" title="回收站">🗑</button>
             <button class="add-item-btn-sm" @click="openCreateModal">+ 添加</button>
           </div>
         </div>
@@ -891,6 +983,46 @@ onMounted(() => {
           </div>
           <div class="sub-modal-body">
             <Stats />
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ====== Trash Modal ====== -->
+    <Teleport to="body">
+      <div v-if="showTrashModal" class="sub-modal-overlay" @click.self="showTrashModal = false">
+        <div class="sub-modal trash-modal">
+          <div class="sub-modal-header">
+            <h3><span class="sub-modal-icon">🗑</span> 回收站 <span class="trash-count">({{ trashTotal }}件)</span></h3>
+            <button class="sub-modal-close" @click="showTrashModal = false">✕</button>
+          </div>
+          <div class="sub-modal-body">
+            <div v-if="trashLoading" class="cf-loading">
+              <div class="pixel-loading"></div>
+              <span>加载中...</span>
+            </div>
+            <div v-else-if="trashItems.length === 0" class="trash-empty">
+              <span class="trash-empty-icon">▢</span>
+              <span>回收站是空的</span>
+            </div>
+            <div v-else class="trash-grid">
+              <div v-for="item in trashItems" :key="item.id" class="trash-item">
+                <div class="trash-item-left">
+                  <span class="trash-item-name">{{ item.name }}</span>
+                  <span class="trash-item-date">删除于 {{ item.deleted_at?.slice(0, 10) }}</span>
+                </div>
+                <div class="trash-item-actions">
+                  <button class="trash-btn restore" @click="handleRestore(item.id)" title="恢复">⟲ 恢复</button>
+                  <button class="trash-btn danger" @click="handlePermanentDelete(item.id)" title="彻底删除">✕ 彻底</button>
+                </div>
+              </div>
+            </div>
+            <div v-if="trashPages > 1" class="pagination">
+              <button class="page-btn" :disabled="trashPage <= 1" @click="goToTrashPage(trashPage - 1)">◀</button>
+              <span class="page-info">{{ trashPage }}/{{ trashPages }}</span>
+              <button class="page-btn" :disabled="trashPage >= trashPages" @click="goToTrashPage(trashPage + 1)">▶</button>
+            </div>
+            <div class="trash-warning">⚠ 彻底删除不可恢复</div>
           </div>
         </div>
       </div>
@@ -2191,6 +2323,109 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+}
+
+/* ===== Create Item Form (in modal) ===== */
+.trash-modal {
+  width: 600px;
+}
+
+.trash-count {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 10px;
+  color: var(--pixel-text-secondary);
+}
+
+.trash-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 0;
+  color: var(--pixel-text-secondary);
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 12px;
+}
+
+.trash-empty-icon {
+  font-size: 36px;
+  color: var(--pixel-border);
+}
+
+.trash-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trash-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--pixel-bg);
+  border: 2px solid var(--pixel-border);
+}
+
+.trash-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.trash-item-name {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 12px;
+  color: var(--pixel-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trash-item-date {
+  font-size: 10px;
+  color: var(--pixel-text-secondary);
+}
+
+.trash-item-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.trash-btn {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border: 2px solid var(--pixel-border);
+  background: var(--pixel-card-bg);
+  color: var(--pixel-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.trash-btn.restore:hover {
+  border-color: var(--pixel-success);
+  color: var(--pixel-success);
+}
+
+.trash-btn.danger:hover {
+  border-color: var(--pixel-accent);
+  color: var(--pixel-accent);
+}
+
+.trash-warning {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 2px solid var(--pixel-border);
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 10px;
+  color: var(--pixel-warning);
+  text-align: center;
 }
 
 /* ===== Create Item Form (in modal) ===== */

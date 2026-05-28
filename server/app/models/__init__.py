@@ -4,5 +4,9 @@ from app.models.tag import Tag
 from app.models.item import Item, item_tags
 from app.models.cost import AdditionalCost
 from app.models.image import ItemImage
+from app.models.quest import DailyQuest, UserAchievement
 
-__all__ = ["User", "Category", "Tag", "Item", "AdditionalCost", "ItemImage", "item_tags"]
+__all__ = [
+    "User", "Category", "Tag", "Item", "AdditionalCost", "ItemImage",
+    "item_tags", "DailyQuest", "UserAchievement",
+]

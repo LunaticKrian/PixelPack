@@ -8,13 +8,15 @@ from app.database import Base, engine
 from app.models import (  # noqa: F401 – ensure tables are created
     AdditionalCost,
     Category,
+    DailyQuest,
     Item,
     ItemImage,
     Tag,
     User,
+    UserAchievement,
     item_tags,
 )
-from app.routers import auth, categories, items, stats, tags
+from app.routers import auth, categories, items, quests, stats, tags
 
 
 @asynccontextmanager
@@ -48,3 +50,4 @@ app.include_router(categories.router)
 app.include_router(tags.router)
 app.include_router(items.router)
 app.include_router(stats.router)
+app.include_router(quests.router)

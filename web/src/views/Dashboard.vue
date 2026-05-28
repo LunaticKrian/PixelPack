@@ -5,7 +5,12 @@ import {
   getOverview, getRecentItems, getWarrantyAlerts,
   type OverviewStats, type RecentItem, type WarrantyAlert,
 } from '../api/stats'
+import { getQuestSummary } from '../api/quests'
+import type { QuestSummary, Achievement } from '../types/quest'
 import { formatCurrency, formatDays } from '../utils/format'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
 
 const router = useRouter()
 
@@ -13,13 +18,17 @@ const loading = ref(true)
 const overview = ref<OverviewStats | null>(null)
 const recentItems = ref<RecentItem[]>([])
 const warrantyAlerts = ref<WarrantyAlert[]>([])
+const questSummary = ref<QuestSummary | null>(null)
+
+const hoveredAch = ref<Achievement | null>(null)
+const achTooltipStyle = ref<Record<string, string>>({})
 
 const statusLabel: Record<string, string> = {
   ACTIVE: '使用中', IDLE: '闲置', RETIRED: '退役', SOLD: '已售', DISCARDED: '已弃',
 }
 
-// RPG stat mappings
-const level = computed(() => overview.value?.total_items ?? 0)
+// RPG stat mappings — level now includes quest EXP
+const level = computed(() => questSummary.value?.level ?? (overview.value?.total_items ?? 0))
 const gold = computed(() => overview.value?.total_assets_value ?? 0)
 const activeCount = computed(() => overview.value?.active_items ?? 0)
 const totalItems = computed(() => overview.value?.total_items ?? 1)
@@ -27,21 +36,42 @@ const hpPercent = computed(() => totalItems > 0 ? Math.round((activeCount / tota
 const idleCount = computed(() => totalItems - activeCount)
 const mpPercent = computed(() => totalItems > 0 ? Math.min(100, Math.round((idleCount / totalItems) * 100)) : 0)
 const expPercent = computed(() => {
-  if (!overview.value) return 0
-  return Math.min(100, Math.round((overview.value.avg_daily_cost / 10) * 100))
+  if (!questSummary.value) return 0
+  const exp = questSummary.value.total_exp
+  const currentLevel = questSummary.value.level
+  const nextLevelExp = currentLevel * 50
+  const prevLevelExp = (currentLevel - 1) * 50
+  return Math.min(100, Math.round(((exp - prevLevelExp) / (nextLevelExp - prevLevelExp)) * 100))
 })
+
+function onAchHover(ach: Achievement, event: MouseEvent) {
+  hoveredAch.value = ach
+  const rect = (event.target as HTMLElement).getBoundingClientRect()
+  achTooltipStyle.value = {
+    position: 'fixed',
+    left: rect.left + 'px',
+    top: (rect.bottom + 6) + 'px',
+    zIndex: '400',
+  }
+}
+
+function onAchLeave() {
+  hoveredAch.value = null
+}
 
 async function loadAll() {
   loading.value = true
   try {
-    const [ov, recent, warranty] = await Promise.all([
+    const [ov, recent, warranty, qs] = await Promise.all([
       getOverview(),
       getRecentItems(5),
       getWarrantyAlerts(30),
+      getQuestSummary(),
     ])
     overview.value = ov
     recentItems.value = recent
     warrantyAlerts.value = warranty
+    questSummary.value = qs
   } catch (e) {
     console.error('Dashboard load error', e)
   } finally {
@@ -90,7 +120,7 @@ onMounted(loadAll)
           <!-- Right: Info + Stats + Bars -->
           <div class="char-data-col">
             <div class="char-info">
-              <div class="char-name">冒险者 {{ 'Krian' }}</div>
+              <div class="char-name">冒险者 {{ auth.user?.username }}</div>
               <div class="char-level">Lv.{{ level }}</div>
               <div class="char-class">物品管理者</div>
             </div>
@@ -148,19 +178,71 @@ onMounted(loadAll)
           </div>
         </div>
 
-        <!-- Quest Slots (Placeholder) -->
+        <!-- Quest System -->
         <div class="quest-section">
           <div class="section-label">
             <span class="label-icon">▣</span>
-            <span>任务进度</span>
-            <span class="coming-soon">即将开放</span>
+            <span>每日任务</span>
+            <span class="quest-date">{{ new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' }) }}</span>
           </div>
-          <div class="quest-grid">
-            <div v-for="i in 5" :key="i" class="quest-slot">
-              <span class="quest-icon">?</span>
+          <div class="quest-cards">
+            <div
+              v-for="q in questSummary?.daily_quests ?? []"
+              :key="q.id"
+              class="quest-card"
+              :class="{ completed: q.completed }"
+            >
+              <div class="qc-name">{{ q.name }}</div>
+              <div class="qc-desc">{{ q.description }}</div>
+              <div class="qc-bar-track">
+                <div
+                  class="qc-bar-fill"
+                  :class="{ done: q.completed }"
+                  :style="{ width: Math.min(100, Math.round((q.progress / q.target) * 100)) + '%' }"
+                ></div>
+              </div>
+              <div class="qc-footer">
+                <span class="qc-progress">{{ q.progress }}/{{ q.target }}</span>
+                <span class="qc-exp" :class="{ earned: q.completed }">
+                  {{ q.completed ? '✓' : '+' }}{{ q.exp_reward }} EXP
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Achievement Badges -->
+          <div class="ach-section">
+            <div class="ach-header">
+              <span class="ach-title">成就</span>
+              <span class="ach-count">{{ questSummary?.achievements_completed ?? 0 }}/{{ questSummary?.achievements_total ?? 0 }}</span>
+            </div>
+            <div class="ach-grid">
+              <div
+                v-for="ach in questSummary?.achievements ?? []"
+                :key="ach.achievement_id"
+                class="ach-badge"
+                :class="{ unlocked: ach.unlocked, locked: !ach.unlocked }"
+                @mouseenter="onAchHover(ach, $event)"
+                @mouseleave="onAchLeave"
+              >
+                <span class="ach-icon">{{ ach.unlocked ? ach.icon : '?' }}</span>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- Achievement Tooltip -->
+        <Teleport to="body">
+          <div v-if="hoveredAch" class="ach-tooltip" :style="achTooltipStyle">
+            <div class="at-name">{{ hoveredAch.name }}</div>
+            <div class="at-desc">{{ hoveredAch.description }}</div>
+            <div class="at-exp">+{{ hoveredAch.exp_reward }} EXP</div>
+            <div v-if="hoveredAch.unlocked && hoveredAch.unlocked_at" class="at-date">
+              解锁于 {{ hoveredAch.unlocked_at.slice(0, 10) }}
+            </div>
+            <div v-if="!hoveredAch.unlocked" class="at-locked">未解锁</div>
+          </div>
+        </Teleport>
       </div>
 
       <!-- ====== RIGHT: System Menu + Info ====== -->
@@ -468,7 +550,7 @@ onMounted(loadAll)
   opacity: 0.6;
 }
 
-/* Quest Section (Placeholder) */
+/* Quest Section */
 .quest-section {
   border-top: 2px dashed var(--pixel-border);
   padding-top: 16px;
@@ -478,7 +560,7 @@ onMounted(loadAll)
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-family: var(--font-pixel), 'Ark Pixel', monospace;
   font-size: 12px;
   color: var(--pixel-text-secondary);
@@ -488,33 +570,204 @@ onMounted(loadAll)
   color: var(--pixel-primary);
 }
 
-.coming-soon {
-  font-size: 9px;
-  border: 1px solid var(--pixel-border);
-  padding: 1px 6px;
-  color: var(--pixel-border);
+.quest-date {
   margin-left: auto;
+  font-size: 10px;
+  opacity: 0.5;
 }
 
-.quest-grid {
+.quest-cards {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.quest-slot {
-  aspect-ratio: 1;
-  border: 2px dashed var(--pixel-border);
+.quest-card {
   background: var(--pixel-bg);
+  border: 2px solid var(--pixel-border);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.12s ease;
+}
+
+.quest-card.completed {
+  border-color: var(--pixel-success);
+  background: rgba(56, 183, 100, 0.06);
+}
+
+.qc-name {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pixel-text);
+}
+
+.quest-card.completed .qc-name {
+  color: var(--pixel-success);
+}
+
+.qc-desc {
+  font-size: 10px;
+  color: var(--pixel-text-secondary);
+  line-height: 1.3;
+}
+
+.qc-bar-track {
+  height: 6px;
+  background: var(--pixel-bg-secondary);
+  border: 1px solid var(--pixel-border);
+  margin-top: 2px;
+}
+
+.qc-bar-fill {
+  height: 100%;
+  background: var(--pixel-primary);
+  transition: width 0.4s ease-out;
+}
+
+.qc-bar-fill.done {
+  background: var(--pixel-success);
+  box-shadow: 0 0 4px rgba(56, 183, 100, 0.3);
+}
+
+.qc-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.qc-progress {
+  font-size: 9px;
+  color: var(--pixel-text-secondary);
+  font-family: 'Press Start 2P', monospace;
+}
+
+.qc-exp {
+  font-size: 9px;
+  color: var(--pixel-warning);
+  font-family: 'Press Start 2P', monospace;
+}
+
+.qc-exp.earned {
+  color: var(--pixel-success);
+}
+
+/* Achievement Section */
+.ach-section {
+  border-top: 2px solid var(--pixel-border);
+  padding-top: 12px;
+}
+
+.ach-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ach-title {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 11px;
+  color: var(--pixel-text-secondary);
+}
+
+.ach-count {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--pixel-text-secondary);
+}
+
+.ach-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ach-badge {
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid var(--pixel-border);
+  background: var(--pixel-bg);
+  cursor: pointer;
+  transition: border-color 0.1s ease, transform 0.1s ease;
+  position: relative;
 }
 
-.quest-icon {
-  font-size: 20px;
+.ach-badge.unlocked {
+  border-color: var(--pixel-warning);
+  background: rgba(239, 125, 87, 0.1);
+  box-shadow: 0 0 4px rgba(239, 125, 87, 0.2);
+}
+
+.ach-badge.locked {
+  opacity: 0.35;
+}
+
+.ach-badge:hover {
+  transform: scale(1.15);
+  z-index: 10;
+}
+
+.ach-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Achievement Tooltip */
+.ach-tooltip {
+  background: var(--pixel-card-bg);
+  border: 3px solid var(--pixel-warning);
+  padding: 8px 10px;
+  box-shadow: 4px 4px 0 var(--pixel-shadow);
+  min-width: 140px;
+  pointer-events: none;
+  animation: tt-in 0.1s ease-out;
+}
+
+@keyframes tt-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.at-name {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pixel-warning);
+  margin-bottom: 4px;
+}
+
+.at-desc {
+  font-size: 11px;
+  color: var(--pixel-text);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.at-exp {
+  font-size: 10px;
+  color: var(--pixel-primary);
+  font-family: 'Press Start 2P', monospace;
+}
+
+.at-date {
+  font-size: 9px;
+  color: var(--pixel-text-secondary);
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--pixel-border);
+}
+
+.at-locked {
+  font-size: 9px;
   color: var(--pixel-border);
-  opacity: 0.5;
+  margin-top: 4px;
 }
 
 /* ===== Side Panel (Right) ===== */
