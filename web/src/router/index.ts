@@ -82,6 +82,36 @@ const router = createRouter({
       component: () => import('../views/CharacterCreation.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/blog',
+      name: 'blog',
+      component: () => import('../views/BlogList.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/blog/new',
+      name: 'blog-new',
+      component: () => import('../views/BlogEditor.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/blog/:id',
+      name: 'blog-detail',
+      component: () => import('../views/BlogDetail.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/blog/:id/edit',
+      name: 'blog-edit',
+      component: () => import('../views/BlogEditor.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/share/:token',
+      name: 'blog-share',
+      component: () => import('../views/BlogShare.vue'),
+      meta: { guest: true },
+    },
   ],
 })
 

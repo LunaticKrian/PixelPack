@@ -7,6 +7,7 @@ const auth = useAuthStore()
 
 const navItems = [
   { path: '/', label: '角色信息', icon: '◈' },
+  { path: '/blog', label: '旅行日志', icon: '✦' },
 ]
 
 function handleLogout() {

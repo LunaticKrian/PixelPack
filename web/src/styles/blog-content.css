@@ -1,0 +1,319 @@
+/*
+  Blog Content — md-editor-v3 Preview Override
+  Unified with pixel theme: blue-dark bg, white text.
+*/
+
+/* ── md-editor-v3 theme variable override ──────────────────────────── */
+
+.blog-scroll-content .md-editor {
+  background-color: transparent !important;
+  --md-bk-color: transparent;
+  --md-color: var(--pixel-text);
+}
+
+.blog-scroll-content .md-editor-preview {
+  /* Force dark palette via md-editor's own variables */
+  --md-theme-color: var(--pixel-text);
+  --md-theme-color-reverse: var(--pixel-bg);
+  --md-theme-color-hover: var(--pixel-bg-secondary);
+  --md-theme-color-hover-inset: var(--pixel-border);
+  --md-theme-link-color: var(--pixel-primary);
+  --md-theme-link-hover-color: var(--pixel-info);
+  --md-theme-border-color: var(--pixel-border);
+  --md-theme-border-color-reverse: var(--pixel-text);
+  --md-theme-border-color-inset: var(--pixel-border);
+  --md-theme-bg-color: transparent;
+  --md-theme-bg-color-inset: var(--pixel-bg-secondary);
+  --md-theme-code-inline-color: var(--pixel-primary);
+  --md-theme-code-inline-bg-color: rgba(65, 166, 246, 0.12);
+  --md-theme-code-inline-radius: 0;
+  --md-theme-code-block-color: var(--pixel-text);
+  --md-theme-code-block-bg-color: var(--pixel-bg);
+  --md-theme-code-before-bg-color: var(--pixel-bg);
+  --md-theme-code-block-radius: 0;
+  --md-theme-code-copy-tips-color: var(--pixel-text);
+  --md-theme-code-copy-tips-bg-color: var(--pixel-bg-secondary);
+  --md-theme-code-active-color: var(--pixel-primary);
+  --md-theme-radius-s: 0;
+  --md-theme-radius-m: 0;
+
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.blog-scroll-content .md-editor-preview-wrapper {
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+.blog-scroll-content {
+  padding: 24px 28px 28px;
+  border-top: 1px solid var(--pixel-border);
+}
+
+/* ── Base Typography ───────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--pixel-text);
+  word-break: break-word;
+}
+
+/* ── Paragraphs ─────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview p {
+  margin: 0 0 14px;
+  color: var(--pixel-text);
+}
+
+.blog-scroll-content .md-editor-preview p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Headings ───────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview h1,
+.blog-scroll-content .md-editor-preview h2,
+.blog-scroll-content .md-editor-preview h3,
+.blog-scroll-content .md-editor-preview h4,
+.blog-scroll-content .md-editor-preview h5,
+.blog-scroll-content .md-editor-preview h6 {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  color: var(--pixel-text);
+  margin: 24px 0 10px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.blog-scroll-content .md-editor-preview h1 {
+  font-size: 18px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--pixel-border);
+}
+
+.blog-scroll-content .md-editor-preview h2 {
+  font-size: 16px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--pixel-border);
+}
+
+.blog-scroll-content .md-editor-preview h3 { font-size: 14px; }
+.blog-scroll-content .md-editor-preview h4 { font-size: 13px; }
+.blog-scroll-content .md-editor-preview h5 { font-size: 12px; }
+.blog-scroll-content .md-editor-preview h6 {
+  font-size: 11px;
+  color: var(--pixel-text-secondary);
+}
+
+/* ── Links ──────────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview a {
+  color: var(--pixel-primary);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--pixel-primary) 40%, transparent);
+  transition: border-color 0.15s;
+}
+
+.blog-scroll-content .md-editor-preview a:hover {
+  border-color: var(--pixel-primary);
+}
+
+/* ── Inline Code ────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview code {
+  font-family: 'VT323', var(--font-pixel), monospace;
+  font-size: 14px;
+  color: var(--pixel-primary);
+  background: rgba(65, 166, 246, 0.12) !important;
+  padding: 1px 5px;
+  border: 1px solid var(--pixel-border);
+}
+
+/* ── Code Blocks ────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview pre {
+  background: var(--pixel-bg) !important;
+  border: 2px solid var(--pixel-border);
+  padding: 14px !important;
+  margin: 14px 0;
+  overflow-x: auto;
+}
+
+.blog-scroll-content .md-editor-preview pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 13px;
+  color: var(--pixel-text);
+  line-height: 1.65;
+}
+
+/* ── Blockquotes ────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview blockquote {
+  margin: 14px 0;
+  padding: 10px 16px;
+  background: var(--pixel-bg-secondary) !important;
+  border-left: 3px solid var(--pixel-primary) !important;
+  border-radius: 0 !important;
+}
+
+.blog-scroll-content .md-editor-preview blockquote p {
+  color: var(--pixel-text-secondary);
+  margin-bottom: 6px;
+}
+
+.blog-scroll-content .md-editor-preview blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Lists ──────────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview ul,
+.blog-scroll-content .md-editor-preview ol {
+  margin: 10px 0;
+  padding-left: 22px;
+}
+
+.blog-scroll-content .md-editor-preview li {
+  margin: 4px 0;
+  line-height: 1.75;
+}
+
+.blog-scroll-content .md-editor-preview ul li::marker {
+  content: '▸ ';
+  color: var(--pixel-text-secondary);
+  font-size: 10px;
+}
+
+.blog-scroll-content .md-editor-preview ol li::marker {
+  color: var(--pixel-text-secondary);
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+}
+
+/* ── Task Lists ─────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview .md-editor-task-list-item {
+  list-style: none;
+  margin-left: -18px;
+}
+
+.blog-scroll-content .md-editor-preview .md-editor-task-list-item input[type="checkbox"] {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--pixel-border);
+  background: var(--pixel-bg);
+  vertical-align: middle;
+  margin-right: 6px;
+  position: relative;
+  cursor: default;
+}
+
+.blog-scroll-content .md-editor-preview .md-editor-task-list-item input[type="checkbox"]:checked {
+  background: var(--pixel-primary);
+  border-color: var(--pixel-primary);
+}
+
+.blog-scroll-content .md-editor-preview .md-editor-task-list-item input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: -3px;
+  left: 0;
+  font-size: 10px;
+  color: var(--pixel-bg);
+  font-weight: bold;
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 2px solid var(--pixel-border);
+}
+
+.blog-scroll-content .md-editor-preview th {
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pixel-text);
+  padding: 8px 12px;
+  text-align: left;
+  border: 1px solid var(--pixel-border);
+  background: var(--pixel-bg-secondary);
+}
+
+.blog-scroll-content .md-editor-preview td {
+  padding: 6px 12px;
+  border: 1px solid var(--pixel-border);
+  font-size: 12px;
+  color: var(--pixel-text);
+}
+
+.blog-scroll-content .md-editor-preview tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--pixel-bg) 50%, transparent);
+}
+
+/* ── Horizontal Rule ────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview hr {
+  border: none !important;
+  height: 2px !important;
+  background: var(--pixel-border) !important;
+  margin: 20px 0 !important;
+}
+
+/* ── Images ─────────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview img {
+  border: 2px solid var(--pixel-border);
+  max-width: 100%;
+  display: block;
+  margin: 14px auto;
+}
+
+/* ── Del / Mark ─────────────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview del {
+  text-decoration: line-through;
+  color: var(--pixel-text-secondary);
+  opacity: 0.6;
+}
+
+.blog-scroll-content .md-editor-preview mark {
+  background: color-mix(in srgb, var(--pixel-warning) 25%, transparent);
+  color: var(--pixel-text);
+  padding: 1px 4px;
+}
+
+/* ── Strong / Emphasis ──────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview strong {
+  color: var(--pixel-text);
+}
+
+.blog-scroll-content .md-editor-preview em {
+  color: var(--pixel-text);
+}
+
+/* ── Admonition blocks ──────────────────────────────────────────────── */
+
+.blog-scroll-content .md-editor-preview .md-editor-admonition {
+  background: var(--pixel-bg-secondary) !important;
+  border-color: var(--pixel-border) !important;
+  border-radius: 0 !important;
+}
+
+.blog-scroll-content .md-editor-preview .md-editor-admonition-title {
+  color: var(--pixel-text) !important;
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+}
+
+.blog-scroll-content .md-editor-preview .md-editor-admonition-content {
+  color: var(--pixel-text-secondary) !important;
+}
