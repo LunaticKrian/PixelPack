@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>新游戏 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="register" data-layout="auth">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+  <div class="auth__scanlines" aria-hidden="true"></div>
+  <div class="auth__sweep" aria-hidden="true"></div>
+
+  <div class="auth">
+    <div class="auth-card">
+      <div class="auth__header">
+        <div class="auth__title">PIXELPACK</div>
+        <div class="auth__sub">~ 物品管理 ~</div>
+        <div class="auth__coin">投币开始游戏</div>
+      </div>
+
+      <div class="sec-title" style="margin-bottom:16px"><span class="t-pixel t-accent">&gt;</span> <span>新游戏</span> <span class="auth__cursor t-accent">_</span></div>
+
+      <form onsubmit="event.preventDefault(); notify('存档创建中…', 'ok'); setTimeout(()=>location.href='character-create.html',600)">
+        <div class="field">
+          <label class="field__label">用户名</label>
+          <input class="input" type="text" placeholder="冒险者的名号" />
+        </div>
+        <div class="field">
+          <label class="field__label">邮箱 <span class="badge" style="background:var(--bg-card);color:var(--text-faint);box-shadow:none;border-color:var(--line-dim)">选填</span></label>
+          <input class="input" type="email" placeholder="you@example.com" />
+        </div>
+        <div class="field">
+          <label class="field__label">密码</label>
+          <input class="input" type="password" placeholder="6位以上" />
+        </div>
+        <div class="field">
+          <label class="field__label">确认密码</label>
+          <input class="input" type="password" placeholder="再次输入" />
+        </div>
+        <button class="btn btn--primary btn--block" type="submit">▶ 开始</button>
+      </form>
+
+      <div class="sec-divider">或</div>
+      <div style="text-align:center;font-size:13px" class="t-dim">已有账号？<a class="t-accent" href="login.html" style="font-weight:700">登录 →</a></div>
+
+      <div class="auth__footer">© 2026 PixelPack <span class="auth__cursor">_</span></div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

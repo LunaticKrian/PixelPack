@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>背包 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="items" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content">
+      <div class="inv">
+
+        <!-- ════ 侧栏 ════ -->
+        <aside>
+          <div class="acc is-open">
+            <div class="acc__head"><span class="portrait" style="width:38px;font-size:20px;aspect-ratio:1">🧭</span><span class="acc__title">冒险者 Krian</span><span class="acc__gly">▼</span></div>
+            <div class="acc__body" style="text-align:center"><div class="t-num t-gold" style="font-size:16px">Lv.24</div><div class="t-faint t-pixel" style="font-size:8px">物品总数</div></div>
+          </div>
+
+          <div class="acc is-open">
+            <div class="acc__head"><span class="acc__title">◈ 数据概览</span><span class="acc__gly">▼</span></div>
+            <div class="acc__body">
+              <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px">
+                <div class="stat-card"><div class="stat-card__gly">◆</div><div class="stat-card__label">物品总数</div><div class="stat-card__value">24</div></div>
+                <div class="stat-card"><div class="stat-card__gly">$</div><div class="stat-card__label">资产总值</div><div class="stat-card__value">18.6K</div></div>
+                <div class="stat-card"><div class="stat-card__gly">◢</div><div class="stat-card__label">日均成本</div><div class="stat-card__value">8.6</div></div>
+                <div class="stat-card"><div class="stat-card__gly">▶</div><div class="stat-card__label">活跃物品</div><div class="stat-card__value">19</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="acc is-open">
+            <div class="acc__head"><span class="acc__title">▣ 状态分布</span><span class="acc__gly">▼</span></div>
+            <div class="acc__body">
+              <div class="status-row"><span class="dot s-active"></span><div class="status-row__track"><div class="status-row__fill" style="width:79%;background:var(--ok)"></div></div><span class="status-row__num">19 (79%)</span></div>
+              <div class="status-row"><span class="dot s-idle"></span><div class="status-row__track"><div class="status-row__fill" style="width:17%;background:var(--warn)"></div></div><span class="status-row__num">4 (17%)</span></div>
+              <div class="status-row"><span class="dot s-retired"></span><div class="status-row__track"><div class="status-row__fill" style="width:4%;background:var(--muted)"></div></div><span class="status-row__num">1 (4%)</span></div>
+            </div>
+          </div>
+
+          <div class="acc is-open">
+            <div class="acc__head"><span class="acc__title">▦ 分类占比</span><span class="acc__gly">▼</span></div>
+            <div class="acc__body">
+              <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                <div class="donut" style="background:conic-gradient(var(--accent) 0 38%,var(--ok) 38% 63%,var(--warn) 63% 83%,var(--gold) 83% 95%,var(--muted) 95% 100%)">
+                  <div class="donut__hole"><div><div class="donut__hole-num">24</div><div class="donut__hole-lbl">物品</div></div></div>
+                </div>
+                <div class="legend" style="flex:1;min-width:120px">
+                  <div class="legend__row"><span class="legend__sq" style="background:var(--accent)"></span>电子设备 <span class="t-faint" style="margin-left:auto">9</span></div>
+                  <div class="legend__row"><span class="legend__sq" style="background:var(--ok)"></span>服饰 <span class="t-faint" style="margin-left:auto">6</span></div>
+                  <div class="legend__row"><span class="legend__sq" style="background:var(--warn)"></span>工具 <span class="t-faint" style="margin-left:auto">5</span></div>
+                  <div class="legend__row"><span class="legend__sq" style="background:var(--gold)"></span>书籍 <span class="t-faint" style="margin-left:auto">3</span></div>
+                  <div class="legend__row"><span class="legend__sq" style="background:var(--muted)"></span>其他 <span class="t-faint" style="margin-left:auto">1</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="acc">
+            <div class="acc__head"><span class="acc__title">▸ 最近获取</span><span class="acc__count">5</span><span class="acc__gly">▼</span></div>
+            <div class="acc__body" id="recentSide"></div>
+          </div>
+
+          <div class="acc">
+            <div class="acc__head"><span class="acc__title">! 保修提醒</span><span class="acc__count" style="color:var(--danger);border-color:var(--danger)">3</span><span class="acc__gly">▼</span></div>
+            <div class="acc__body" id="warrantySide"></div>
+          </div>
+        </aside>
+
+        <!-- ════ 主区 ════ -->
+        <section>
+          <!-- 工具栏 -->
+          <div class="toolbar">
+            <a class="btn btn--ghost" href="index.html">◀ 角色信息</a>
+            <div class="toolbar__title">◆ 背包 <span class="t-accent">24</span> 件</div>
+            <div style="margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+              <div class="seg" role="group" aria-label="工具">
+                <a class="btn--icon" href="categories.html" title="分类">▦</a>
+                <a class="btn--icon" href="categories.html" title="标签">◎</a>
+                <a class="btn--icon" href="stats.html" title="统计">▤</a>
+                <button class="btn--icon" onclick="notify('已导出 CSV','ok')" title="导出">⤓</button>
+                <button class="btn--icon" onclick="openModal('trashModal')" title="回收站">🗑</button>
+              </div>
+              <button class="btn btn--primary" onclick="openModal('createModal')">＋ 添加</button>
+            </div>
+          </div>
+
+          <!-- 筛选 -->
+          <div class="filters">
+            <input class="input" placeholder="◎ 搜索物品…" style="max-width:220px" />
+            <select class="select" style="max-width:140px"><option>全部分类</option><option>电子设备</option><option>服饰</option><option>工具</option><option>书籍</option></select>
+            <select class="select" style="max-width:140px"><option>全部状态</option><option>使用中</option><option>闲置</option><option>退役</option></select>
+          </div>
+
+          <!-- 分类快筛标签 -->
+          <div class="tabs" style="margin-bottom:12px">
+            <button class="tab is-active" data-filter="all">全部</button>
+            <button class="tab" data-filter="电子">◆ 电子</button>
+            <button class="tab" data-filter="服饰">◈ 服饰</button>
+            <button class="tab" data-filter="工具">▶ 工具</button>
+            <button class="tab" data-filter="书籍">★ 书籍</button>
+          </div>
+
+          <!-- 物品网格 -->
+          <div class="inv-grid stagger" id="invGrid"></div>
+
+          <!-- 分页 -->
+          <div class="pager">
+            <button class="btn btn--sm btn--ghost">◀</button>
+            <span>1 / 2</span>
+            <button class="btn btn--sm btn--ghost">▶</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <!-- ════ 模态：新建/编辑物品 ════ -->
+  <div class="modal" id="createModal">
+    <div class="modal__overlay"></div>
+    <div class="modal__box modal__box--lg">
+      <div class="modal__head"><div class="modal__title">▶ 新增物品</div><button class="modal__close" data-close>✕</button></div>
+      <div class="modal__body">
+        <div class="field"><label class="field__label">名称</label><input class="input" placeholder="物品名称" /></div>
+        <div class="field"><label class="field__label">描述</label><textarea class="textarea" placeholder="物品描述（选填）"></textarea></div>
+        <div class="sec-divider">— 购买信息 —</div>
+        <div class="row">
+          <div class="field" style="flex:1;min-width:140px"><label class="field__label">分类</label><select class="select"><option>电子设备</option><option>服饰</option><option>工具</option><option>书籍</option></select></div>
+          <div class="field" style="flex:1;min-width:120px"><label class="field__label">购买日期</label><input class="input" type="date" value="2026-07-11" /></div>
+        </div>
+        <div class="row">
+          <div class="field" style="flex:1;min-width:100px"><label class="field__label">价格</label><input class="input" type="number" placeholder="0.00" /></div>
+          <div class="field" style="flex:0;min-width:90px"><label class="field__label">币种</label><select class="select"><option>CNY</option><option>USD</option><option>EUR</option><option>JPY</option></select></div>
+          <div class="field" style="flex:1;min-width:120px"><label class="field__label">购买渠道</label><input class="input" placeholder="京东 / 实体店…" /></div>
+        </div>
+        <div class="sec-divider">— 图片 —</div>
+        <div style="padding:18px;text-align:center;background:var(--bg-inset);border:3px dashed var(--line-grey);color:var(--text-dim)">📤 拖拽图片到此处 / 或点击选择</div>
+        <button class="btn btn--primary btn--block" data-close onclick="notify('物品已添加','ok')" style="margin-top:14px">▶ 保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 模态：回收站 ════ -->
+  <div class="modal" id="trashModal">
+    <div class="modal__overlay"></div>
+    <div class="modal__box">
+      <div class="modal__head"><div class="modal__title">🗑 回收站</div><button class="modal__close" data-close>✕</button></div>
+      <div class="modal__body" id="trashBody"></div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    const ITEMS = [
+      ['⌨️','机械键盘','电子',1.2,'s-active'],['🖱️','游戏鼠标','电子',0.5,'s-active'],
+      ['🎧','降噪耳机','电子',3.5,'s-idle'],['🖥️','显示器','电子',4.2,'s-active'],
+      ['📷','微单相机','电子',12.0,'s-idle'],['🔋','充电宝','电子',0.1,'s-retired'],
+      ['🧥','冲锋衣','服饰',1.8,'s-active'],['👟','徒步鞋','服饰',2.1,'s-active'],
+      ['🧣','羊毛围巾','服饰',0.3,'s-idle'],['🎩','渔夫帽','服饰',0.2,'s-active'],
+      ['🔨','工具箱','工具',0.4,'s-active'],['✂️','裁缝剪','工具',0.1,'s-active'],
+      ['🔦','强光手电','工具',0.05,'s-idle'],['🪛','螺丝刀套装','工具',0.08,'s-active'],
+      ['📖','小说集','书籍',0.2,'s-active'],['📚','技术书','书籍',0.6,'s-active'],['📓','手账本','书籍',0.05,'s-active'],
+      ['☕','保温杯','电子',0.4,'s-active'],['⌚','智能手表','电子',1.9,'s-active'],
+    ];
+    const ST = {'s-active':'使用中','s-idle':'闲置','s-retired':'退役','s-sold':'已售','s-discarded':'已弃'};
+    const grid = document.getElementById('invGrid');
+    ITEMS.forEach((it,i)=>{
+      grid.insertAdjacentHTML('beforeend', `
+        <div class="slot" data-cat="${it[2]}" onclick="location.href='item-detail.html'">
+          <div class="slot__img">${it[0]}</div>
+          <span class="dot slot__st ${it[4]}" title="${ST[it[4]]}"></span>
+          <div class="slot__name">${it[1]}</div>
+          <div class="slot__cost">${it[3]} 💰/天</div>
+        </div>`);
+    });
+
+    // 侧栏：最近 / 保修
+    const RECENT = [['机械键盘',1.2,'s-active'],['保温杯',0.4,'s-active'],['降噪耳机',3.5,'s-idle'],['智能手表',1.9,'s-active'],['手账本',0.05,'s-active']];
+    const rs = document.getElementById('recentSide');
+    RECENT.forEach(r=> rs.insertAdjacentHTML('beforeend', `<div class="li-row" onclick="location.href='item-detail.html'"><span class="dot ${r[2]}"></span><span class="li-row__name">${r[0]}</span><span class="li-row__meta">${r[1]}/天</span></div>`));
+    const WAR = [['降噪耳机',3,'urgent'],['显示器',12,''],['机械键盘',25,'']];
+    const ws = document.getElementById('warrantySide');
+    WAR.forEach(w=> ws.insertAdjacentHTML('beforeend', `<div class="li-row" onclick="location.href='item-detail.html'"><span class="dot ${w[2]==='urgent'?'s-discarded':'s-idle'}"></span><span class="li-row__name">${w[0]}</span><span class="li-row__meta ${w[2]}">${w[1]}天</span></div>`));
+
+    // 回收站
+    const TRASH = [['有线耳机','已弃','s-discarded'],['旧手机壳','退役','s-retired'],['破损雨伞','已弃','s-discarded']];
+    const tb = document.getElementById('trashBody');
+    TRASH.forEach(t=> tb.insertAdjacentHTML('beforeend', `
+      <div class="li-row" style="padding:8px;border-bottom:2px solid var(--line-dim)">
+        <span class="dot ${t[2]}"></span><span class="li-row__name">${t[0]}</span><span class="li-row__meta">${t[1]}</span>
+        <span style="display:flex;gap:8px;margin-left:auto"><button class="btn btn--sm" onclick="notify('已恢复','ok')">恢复</button><button class="btn btn--sm btn--danger" onclick="notify('已彻底删除','err')">✕</button></span>
+      </div>`));
+  </script>
+</body>
+</html>

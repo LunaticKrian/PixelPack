@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>旅行日志 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="blog" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content">
+      <div class="toolbar" style="margin-bottom:14px">
+        <a class="btn btn--sm btn--ghost" href="index.html">◀ 角色信息</a>
+        <div class="toolbar__title">✦ 旅行日志</div>
+      </div>
+
+      <!-- 装饰头部 -->
+      <div class="journey-head">
+        <span class="journey-head__deco tl"></span><span class="journey-head__deco tr"></span>
+        <span class="journey-head__deco bl"></span><span class="journey-head__deco br"></span>
+        <div class="journey-head__orn">✧ ✦ ✧</div>
+        <div class="journey-head__title">旅行日志</div>
+        <div class="journey-head__sub">— 记录每一段冒险的足迹 —</div>
+        <button class="btn btn--primary" style="margin-top:14px" onclick="notify('打开日志编辑器（演示）')">◈ 记录新旅程</button>
+      </div>
+
+      <div style="text-align:center;margin-bottom:18px" class="t-dim t-pixel"><span style="font-size:9px">共 <span class="t-gold">5</span> 段旅程 · CHAPTER LOG</span></div>
+
+      <!-- 时间线 -->
+      <div class="timeline">
+        <div class="timeline__path"></div>
+        <div id="timeline"></div>
+        <div style="text-align:center;padding:10px 0"><span class="badge" style="background:var(--bg-card);color:var(--gold);border-color:var(--gold)">~ 旅途仍在继续 ~</span></div>
+      </div>
+    </main>
+
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <!-- 阅读模态 -->
+  <div class="modal" id="readModal">
+    <div class="modal__overlay"></div>
+    <div class="modal__box modal__box--lg">
+      <div class="modal__head"><div class="modal__title" id="readTitle">▶ 旅程</div><button class="modal__close" data-close>✕</button></div>
+      <div class="modal__body" id="readBody"></div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    const POSTS = [
+      { ch:'CH.05', side:'r', status:'published', date:'2026-07-08', cover:'🏔️',
+        title:'北境冰窟探险', tags:['冒险','装备'],
+        sum:'装备齐全后踏入了传说中封印古龙的冰窟，霜咬短剑在寒雾中泛着冷光。记录这次旅程的装备清单与心得。',
+        body:'清晨从营地出发，气温低至零下二十度。冲锋衣与羊毛围巾扛住了寒风，降噪耳机隔绝了呼啸的风声。\n\n冰窟深处，月光矿在岩壁上幽幽发光。这一趟收获颇丰，也让我重新审视了装备的日均成本——每一件都物有所值。' },
+      { ch:'CH.04', side:'l', status:'published', date:'2026-06-20', cover:'📚',
+        title:'夏日书单整理', tags:['生活','记录'],
+        sum:'把上半年读过的书归档进系统，按日均成本排序后发现，技术书的性价比远超想象。',
+        body:'半年读了 12 本书，其中技术书 5 本。用 PixelPack 给每本书建了档，惊喜地发现单本书的日均成本不到 0.2 元。\n\n知识，是最划算的投资。' },
+      { ch:'CH.03', side:'r', status:'published', date:'2026-05-14', cover:'🛠️',
+        title:'客制化键盘组装记', tags:['客制化','装备'],
+        sum:'历时两周的键盘客制化项目，从选轴到润轴到组装，全程记录。日均成本 1.2 元的快乐。',
+        body:'Gasket 结构 + 录制线性轴 + PBT 键帽。组装的过程本身就是一种享受。\n\n润轴用的润滑脂，记进了附加费用——系统帮我看清了真正的总投入。' },
+      { ch:'CH.02', side:'l', status:'draft', date:'2026-04-02', cover:'',
+        title:'春季装备大整理（草稿）', tags:['整理'],
+        sum:'换季了，把闲置的装备归类、退役了一批老旧物品。还在整理中…',
+        body:'（草稿尚未完成）' },
+      { ch:'CH.01', side:'r', status:'published', date:'2026-01-15', cover:'🧭',
+        title:'启程：建立冒险者档案', tags:['开始'],
+        sum:'一切的开始。注册了 PixelPack，创建了角色，登记了第一件物品。冒险，从这里启程。',
+        body:'作为一个 RPG 爱好者，终于找到了把生活物品管理游戏化的方式。\n\n第一件登记的物品是一把机械键盘，它陪我敲下了这段文字。' },
+    ];
+
+    const tl = document.getElementById('timeline');
+    POSTS.forEach((p,i)=>{
+      const draft = p.status==='draft';
+      tl.insertAdjacentHTML('beforeend', `
+        <div class="milestone milestone--${p.side}">
+          <div class="milestone__node ${draft?'milestone__node--draft':''}">${draft?'◇':'✦'}</div>
+          <div class="ms-card" onclick="openPost(${i})">
+            <div class="ms-card__bar">
+              <span class="${draft?'t-warn':'t-ok'}">${draft?'◈ 草稿中':'✦ 已完成'}</span>
+              <span>${p.date}</span>
+            </div>
+            <div class="ms-card__body">
+              ${p.cover?`<div class="ms-card__cover">${p.cover}</div>`:''}
+              <div class="ms-card__title">${p.title}</div>
+              <div class="ms-card__sum">${p.sum}</div>
+              <div class="ms-card__tags">${p.tags.map(t=>`<span class="tag-chip">${t}</span>`).join('')}</div>
+              <div class="ms-card__foot">
+                <span>${p.ch}</span>
+                <span class="row" style="gap:8px">
+                  <span onclick="event.stopPropagation();notify('分享链接已复制','ok')">⎘</span>
+                  <span onclick="event.stopPropagation();notify('编辑（演示）')">✎</span>
+                  <span onclick="event.stopPropagation();notify('删除（演示）','err')" class="t-danger">✕</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>`);
+    });
+
+    function openPost(i){
+      const p = POSTS[i]; const draft = p.status==='draft';
+      document.getElementById('readTitle').textContent = `▶ ${p.title}`;
+      document.getElementById('readBody').innerHTML = `
+        <div class="row" style="margin-bottom:10px">
+          <span class="badge ${draft?'s-idle':'s-active'}">${draft?'草稿':'已发布'}</span>
+          <span class="t-faint t-pixel" style="font-size:8px;margin-left:auto">${p.date} · ${p.ch}</span>
+        </div>
+        ${p.cover?`<div style="aspect-ratio:16/6;background:var(--bg-slot);border:2px solid var(--line-dark);display:grid;place-items:center;font-size:48px;margin-bottom:12px">${p.cover}</div>`:''}
+        <div class="ms-card__tags" style="margin-bottom:12px">${p.tags.map(t=>`<span class="tag-chip">${t}</span>`).join('')}</div>
+        <div style="font-size:14px;line-height:1.7;color:var(--text-dim);white-space:pre-line">${p.body}</div>
+        <div class="sec-divider" style="margin-top:18px">END</div>`;
+      openModal('readModal');
+    }
+  </script>
+</body>
+</html>

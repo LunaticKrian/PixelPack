@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分类管理 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .color-pick{display:flex;gap:6px;flex-wrap:wrap}
+    .color-swatch{width:30px;height:30px;border:2px solid var(--line-dark);cursor:pointer;box-shadow:2px 2px 0 var(--line-dark)}
+    .color-swatch.is-on{box-shadow:0 0 0 2px var(--text),2px 2px 0 var(--line-dark)}
+  </style>
+</head>
+<body data-page="categories" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content content--centered">
+      <div style="max-width:900px">
+        <div class="toolbar" style="margin-bottom:14px">
+          <a class="btn btn--sm btn--ghost" href="index.html">◀ 角色信息</a>
+          <div class="toolbar__title">▦ 分类管理</div>
+          <button class="btn btn--sm btn--primary" style="margin-left:auto" id="toggleFormBtn">＋ 新增分类</button>
+        </div>
+
+        <!-- 新建表单（可折叠） -->
+        <div class="panel" id="createForm" style="margin-bottom:14px;display:none">
+          <div class="panel__head"><div class="panel__title">＋ 新建分类</div></div>
+          <div class="panel__body">
+            <div class="row">
+              <div class="field" style="flex:1;min-width:120px"><label class="field__label">名称</label><input class="input" placeholder="分类名称" /></div>
+              <div class="field" style="flex:0;min-width:90px"><label class="field__label">图标</label><input class="input" value="◆" maxlength="4" /></div>
+              <div class="field" style="flex:0;min-width:90px"><label class="field__label">排序</label><input class="input" type="number" value="0" /></div>
+            </div>
+            <div class="field"><label class="field__label">颜色</label>
+              <div class="color-pick" id="colorPick">
+                <div class="color-swatch is-on" style="background:#4A90E2"></div>
+                <div class="color-swatch" style="background:#3FAE6B"></div>
+                <div class="color-swatch" style="background:#E08856"></div>
+                <div class="color-swatch" style="background:#FFD700"></div>
+                <div class="color-swatch" style="background:#8B6FD4"></div>
+                <div class="color-swatch" style="background:#B13E53"></div>
+                <div class="color-swatch" style="background:#6BB5FF"></div>
+                <div class="color-swatch" style="background:#6B7A92"></div>
+              </div>
+            </div>
+            <div class="field"><label class="field__label">父分类</label><select class="select"><option>无（顶级分类）</option><option>电子设备</option><option>服饰</option></select></div>
+            <div class="row">
+              <button class="btn btn--primary" onclick="notify('分类已创建','ok')">▶ 保存</button>
+              <button class="btn btn--ghost" id="cancelFormBtn">✕ 取消</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="t-dim t-pixel" style="font-size:8px;margin-bottom:12px">ATEGORIES · 共 5 个分类 · 标签管理同此模式</p>
+
+        <!-- 分类卡片网格 -->
+        <div class="cat-grid stagger" id="catGrid"></div>
+      </div>
+    </main>
+
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    const CATS = [
+      ['◆','#4A90E2','电子设备',1,null,9],['◈','#3FAE6B','服饰',2,null,6],
+      ['▶','#E08856','工具',3,null,5],['★','#FFD700','书籍',4,null,3],
+      ['◇','#6B7A92','其他',5,null,1],
+    ];
+    const cg = document.getElementById('catGrid');
+    CATS.forEach(c=>{
+      cg.insertAdjacentHTML('beforeend', `
+        <div class="cat-card">
+          <div class="cat-card__icon" style="background:${c[1]}20;color:${c[1]}">${c[0]}</div>
+          <div class="cat-card__body">
+            <div class="cat-card__name">${c[2]}</div>
+            <div class="cat-card__meta">#${c[3]} · ${c[5]} 件物品</div>
+            <div class="cat-card__bar" style="background:${c[1]}"></div>
+            <div class="cat-card__actions">
+              <button class="btn btn--sm" onclick="notify('编辑分类（演示）')">✎</button>
+              <button class="btn btn--sm btn--danger" onclick="notify('该分类下有物品，无法删除','err')">✕</button>
+            </div>
+          </div>
+        </div>`);
+    });
+
+    // 表单切换
+    const form = document.getElementById('createForm');
+    document.getElementById('toggleFormBtn').addEventListener('click',()=> form.style.display = form.style.display==='none'?'':'none');
+    document.getElementById('cancelFormBtn').addEventListener('click',()=> form.style.display='none');
+    // 颜色选择
+    document.querySelectorAll('#colorPick .color-swatch').forEach(s=>{
+      s.addEventListener('click',()=>{
+        document.querySelectorAll('#colorPick .color-swatch').forEach(x=>x.classList.remove('is-on'));
+        s.classList.add('is-on');
+      });
+    });
+  </script>
+</body>
+</html>

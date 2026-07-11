@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据统计 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="stats" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content">
+      <div class="toolbar" style="margin-bottom:14px">
+        <a class="btn btn--sm btn--ghost" href="index.html">◀ 角色信息</a>
+        <div class="toolbar__title">◢ 数据统计</div>
+      </div>
+
+      <!-- 筛选条 -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel__body row">
+          <div class="field" style="margin:0"><label class="field__label">开始日期</label><input class="input" type="date" value="2026-01-01" style="max-width:160px" /></div>
+          <div class="field" style="margin:0"><label class="field__label">结束日期</label><input class="input" type="date" value="2026-07-11" style="max-width:160px" /></div>
+          <div class="field" style="margin:0"><label class="field__label">周期</label><select class="select"><option>月</option><option>季</option><option>年</option></select></div>
+          <button class="btn btn--primary" style="align-self:flex-end" onclick="notify('数据已刷新','ok')">↻ 刷新</button>
+        </div>
+      </div>
+
+      <!-- 概览 -->
+      <div class="grid stagger" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px" id="overviewGrid"></div>
+
+      <!-- 分类分析 -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel__head"><div class="panel__title">▦ 分类分析</div></div>
+        <div class="panel__body" style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center">
+          <div id="catPie" style="width:250px;height:240px"></div>
+          <table class="ptable">
+            <thead><tr><th>分类</th><th>数量</th><th>价值</th><th>日均</th></tr></thead>
+            <tbody>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:#4A90E2;vertical-align:middle;margin-right:6px"></span>电子设备</td><td class="num">9</td><td class="num">¥9,200</td><td class="num">4.2</td></tr>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:#3FAE6B;vertical-align:middle;margin-right:6px"></span>服饰</td><td class="num">6</td><td class="num">¥3,800</td><td class="num">1.8</td></tr>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:#E08856;vertical-align:middle;margin-right:6px"></span>工具</td><td class="num">5</td><td class="num">¥2,100</td><td class="num">0.6</td></tr>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:#FFD700;vertical-align:middle;margin-right:6px"></span>书籍</td><td class="num">3</td><td class="num">¥860</td><td class="num">0.3</td></tr>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:#6B7A92;vertical-align:middle;margin-right:6px"></span>其他</td><td class="num">1</td><td class="num">¥2,640</td><td class="num">1.7</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 成本分析 -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel__head"><div class="panel__title">◢ 成本分析 · 日均成本 TOP</div></div>
+        <div class="panel__body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div id="costBar" style="width:100%;height:300px"></div>
+          <div>
+            <div class="sec-title" style="font-size:12px;margin-bottom:10px">状态分布</div>
+            <div class="status-row"><span>使用中</span><div class="status-row__track"><div class="status-row__fill" style="width:79%;background:var(--ok)"></div></div><span class="status-row__num">19 (79%)</span></div>
+            <div class="status-row"><span>闲置</span><div class="status-row__track"><div class="status-row__fill" style="width:17%;background:var(--warn)"></div></div><span class="status-row__num">4 (17%)</span></div>
+            <div class="status-row"><span>退役</span><div class="status-row__track"><div class="status-row__fill" style="width:4%;background:var(--muted)"></div></div><span class="status-row__num">1 (4%)</span></div>
+            <div class="status-row"><span>已售</span><div class="status-row__track"><div class="status-row__fill" style="width:0%;background:var(--info)"></div></div><span class="status-row__num">0 (0%)</span></div>
+            <div class="status-row"><span>已弃</span><div class="status-row__track"><div class="status-row__fill" style="width:0%;background:var(--danger)"></div></div><span class="status-row__num">0 (0%)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 消费趋势 -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel__head"><div class="panel__title">📈 消费趋势 · 月度支出 / 累计</div></div>
+        <div class="panel__body">
+          <div id="trendChart" style="width:100%;height:320px"></div>
+        </div>
+      </div>
+
+      <!-- 保修与生命周期 -->
+      <div class="panel">
+        <div class="panel__head"><div class="panel__title">! 保修与生命周期</div></div>
+        <div class="panel__body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div>
+            <div class="sec-title" style="font-size:12px;margin-bottom:10px">保修提醒（90 天内）</div>
+            <div id="warrantyStats"></div>
+          </div>
+          <div>
+            <div class="sec-title" style="font-size:12px;margin-bottom:10px">生命周期分布</div>
+            <div class="status-row"><span>使用中</span><div class="status-row__track"><div class="status-row__fill" style="width:79%;background:var(--ok)"></div></div><span class="status-row__num">19</span></div>
+            <div class="status-row"><span>闲置</span><div class="status-row__track"><div class="status-row__fill" style="width:17%;background:var(--warn)"></div></div><span class="status-row__num">4</span></div>
+            <div class="status-row"><span>退役</span><div class="status-row__track"><div class="status-row__fill" style="width:4%;background:var(--muted)"></div></div><span class="status-row__num">1</span></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <!-- 复用原项目的 ECharts（冷调像素主题） -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="main.js"></script>
+  <script>
+    const FF = "'DotGothic16','Press Start 2P',monospace";   // 像素字体（中文可读）
+    const C = { accent:'#4A90E2', bright:'#6BB5FF', ok:'#3FAE6B', warn:'#E08856', gold:'#FFD700', epic:'#8B6FD4', muted:'#6B7A92', danger:'#B13E53', dim:'#4A5E7A', text:'#9BB0C8', line:'#050D18' };
+
+    // 概览
+    const OV = [['◆','物品总数','24'],['$','资产总值','¥18.6K'],['◢','日均成本','8.6/天'],['▶','使用中','19']];
+    const og = document.getElementById('overviewGrid');
+    OV.forEach(o=> og.insertAdjacentHTML('beforeend', `<div class="stat-card"><div class="stat-card__gly">${o[0]}</div><div class="stat-card__label">${o[1]}</div><div class="stat-card__value">${o[2]}</div></div>`));
+
+    // 分类饼图（环形）
+    echarts.init(document.getElementById('catPie')).setOption({
+      backgroundColor:'transparent',
+      title:{ text:'¥18.6K', subtext:'资产总值', left:'center', top:'center',
+        textStyle:{ color:'#F0F4F8', fontFamily:FF, fontSize:15 },
+        subtextStyle:{ color:'#9BB0C8', fontFamily:FF, fontSize:9 } },
+      tooltip:{ trigger:'item', backgroundColor:'#1A2D4C', borderColor:'#8A9BB0', textStyle:{ color:'#F0F4F8', fontFamily:FF, fontSize:10 } },
+      series:[{
+        type:'pie', radius:['48%','72%'], center:['50%','50%'],
+        itemStyle:{ borderColor:C.line, borderWidth:3 },
+        label:{ show:true, formatter:'{b}\n{d}%', color:'#F0F4F8', fontFamily:FF, fontSize:9 },
+        labelLine:{ lineStyle:{ color:C.dim } },
+        color:[C.accent, C.ok, C.warn, C.gold, C.muted],
+        data:[ {value:9,name:'电子设备'},{value:6,name:'服饰'},{value:5,name:'工具'},{value:3,name:'书籍'},{value:1,name:'其他'} ]
+      }]
+    });
+
+    // 成本排行（横向条形 · 红→蓝 渐变排序）
+    echarts.init(document.getElementById('costBar')).setOption({
+      backgroundColor:'transparent',
+      tooltip:{ backgroundColor:'#1A2D4C', borderColor:'#8A9BB0', textStyle:{ color:'#F0F4F8', fontFamily:FF, fontSize:10 }, formatter:'{b}<br/>日均 ¥{c}' },
+      grid:{ left:88, right:52, top:8, bottom:22 },
+      xAxis:{ type:'value', splitLine:{ lineStyle:{ color:C.dim, type:'dashed' } }, axisLine:{ show:false }, axisTick:{ show:false }, axisLabel:{ color:C.text, fontFamily:FF, fontSize:8 } },
+      yAxis:{ type:'category',
+        data:['保温杯','机械键盘','冲锋衣','智能手表','降噪耳机','显示器','微单相机'],
+        axisLine:{ lineStyle:{ color:C.dim } }, axisTick:{ show:false }, axisLabel:{ color:'#F0F4F8', fontFamily:FF, fontSize:10 } },
+      series:[{
+        type:'bar', barWidth:'58%',
+        data:[
+          {value:0.4, itemStyle:{color:C.bright}},
+          {value:1.2, itemStyle:{color:C.bright}},
+          {value:1.8, itemStyle:{color:C.accent}},
+          {value:1.9, itemStyle:{color:C.accent}},
+          {value:3.5, itemStyle:{color:C.warn}},
+          {value:4.2, itemStyle:{color:C.warn}},
+          {value:12.0, itemStyle:{color:C.danger}},
+        ],
+        itemStyle:{ borderColor:C.line, borderWidth:2 },
+        label:{ show:true, position:'right', formatter:'¥{c}', color:C.gold, fontFamily:FF, fontSize:9 }
+      }]
+    });
+
+    // 消费趋势（月柱 + 累计折线 组合）
+    echarts.init(document.getElementById('trendChart')).setOption({
+      backgroundColor:'transparent',
+      tooltip:{ trigger:'axis', backgroundColor:'#1A2D4C', borderColor:'#8A9BB0', textStyle:{ color:'#F0F4F8', fontFamily:FF, fontSize:10 } },
+      legend:{ data:['月支出','累计'], textStyle:{ color:C.text, fontFamily:FF, fontSize:9 }, top:0, itemWidth:14, itemHeight:10 },
+      grid:{ left:52, right:58, top:34, bottom:26 },
+      xAxis:{ type:'category', data:['1月','2月','3月','4月','5月','6月'],
+        axisLine:{ lineStyle:{ color:C.dim } }, axisTick:{ show:false }, axisLabel:{ color:C.text, fontFamily:FF, fontSize:9 } },
+      yAxis:[
+        { type:'value', name:'支出', nameTextStyle:{ color:C.text, fontFamily:FF, fontSize:8 }, splitLine:{ lineStyle:{ color:C.dim, type:'dashed' } }, axisLine:{ show:false }, axisLabel:{ color:C.text, fontFamily:FF, fontSize:8 } },
+        { type:'value', name:'累计', nameTextStyle:{ color:C.text, fontFamily:FF, fontSize:8 }, splitLine:{ show:false }, axisLine:{ show:false }, axisLabel:{ color:C.text, fontFamily:FF, fontSize:8 } }
+      ],
+      series:[
+        { name:'月支出', type:'bar', barWidth:'46%', data:[820,1240,950,1500,1100,1380],
+          itemStyle:{ color:C.accent, borderColor:C.line, borderWidth:2 } },
+        { name:'累计', type:'line', yAxisIndex:1, data:[820,2060,3010,4510,5610,6990], smooth:false,
+          symbol:'rect', symbolSize:9, lineStyle:{ color:C.gold, width:2 }, itemStyle:{ color:C.gold, borderColor:C.line } }
+      ]
+    });
+
+    // 保修
+    const W = [['降噪耳机',3,899,'urgent'],['显示器支架',12,159,''],['机械键盘',25,699,''],['微单相机',47,5200,''],['智能手表',68,1280,'']];
+    const ws = document.getElementById('warrantyStats');
+    W.forEach(w=> ws.insertAdjacentHTML('beforeend', `
+      <div class="li-row" style="border-bottom:2px solid var(--line-dim);padding:8px 0">
+        <span class="dot ${w[3]==='urgent'?'s-discarded':'s-idle'}"></span>
+        <span class="li-row__name">${w[0]} <span class="t-faint">¥${w[2]}</span></span>
+        <span class="li-row__meta ${w[3]}">${w[1]}天</span>
+      </div>`));
+
+    // 响应式重绘
+    window.addEventListener('resize', ()=>{
+      ['catPie','costBar','trendChart'].forEach(id=>{ const el=document.getElementById(id); if(el) echarts.getInstanceByDom(el)?.resize(); });
+    });
+  </script>
+</body>
+</html>

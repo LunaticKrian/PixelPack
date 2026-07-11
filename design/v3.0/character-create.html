@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>角色创建 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .cc-num{font-family:var(--font-pixel);font-size:9px;color:var(--gold);background:var(--bg-void);border:2px solid var(--gold);padding:2px 5px;box-shadow:2px 2px 0 var(--line-dark)}
+    .upload{display:grid;place-items:center;aspect-ratio:10/13;background:var(--bg-inset);border:3px dashed var(--line-grey);color:var(--text-dim);font-size:13px;text-align:center;padding:14px;cursor:pointer;transition:border-color .1s}
+    .upload:hover{border-color:var(--accent-bright);color:var(--text)}
+    .class-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    @media(max-width:520px){.class-grid{grid-template-columns:repeat(3,1fr)}}
+    .class-card{padding:10px 6px;text-align:center;background:var(--bg-card);border:3px solid var(--line-grey);box-shadow:var(--sh-frame),var(--sh1);cursor:pointer;transition:transform .08s steps(2)}
+    .class-card:hover{transform:translateY(-2px);background:var(--bg-card-2)}
+    .class-card.is-on{border-color:var(--gold);box-shadow:var(--sh-frame),0 0 0 3px var(--gold),var(--sh1);background:var(--bg-card-2)}
+    .class-card__gly{font-size:22px}
+    .class-card__rpg{font-weight:700;font-size:12px;margin-top:4px}
+    .class-card__real{font-family:var(--font-pixel);font-size:7px;color:var(--text-dim);margin-top:3px}
+    .zodiac{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg-card);border:2px solid var(--gold);box-shadow:2px 2px 0 var(--line-dark)}
+  </style>
+</head>
+<body data-page="character-create" data-layout="auth">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+  <div class="auth__scanlines" aria-hidden="true"></div>
+  <div class="auth__sweep" aria-hidden="true"></div>
+
+  <div class="auth">
+    <div class="auth-card auth-card--wide">
+      <div class="auth__header">
+        <div class="auth__title" style="font-size:18px">角色创建</div>
+        <div class="auth__sub">~ 新建存档 ~</div>
+      </div>
+
+      <form onsubmit="event.preventDefault(); notify('正在进入冒险…','gold'); setTimeout(()=>location.href='index.html',700)">
+        <!-- 01 立绘 -->
+        <div class="sec-title"><span class="cc-num">01</span> 立绘</div>
+        <div class="sec-rule"></div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;margin-bottom:6px">
+          <div class="upload" style="width:120px">🧭<br><br>◈ 点击上传立绘<br>支持拖拽</div>
+          <div class="t-dim" style="font-size:13px;line-height:1.6;padding-top:6px">
+            上传一张你的像素立绘，它将出现在主界面左侧的角色面板。双击立绘可随时更换。<br><br>
+            <span class="t-faint t-pixel" style="font-size:8px">SUPPORTS PNG / JPG · 推荐正方形</span>
+          </div>
+        </div>
+
+        <!-- 02 角色名 -->
+        <div class="sec-divider">— 身份 —</div>
+        <div class="sec-title"><span class="cc-num">02</span> 角色名</div>
+        <div class="sec-rule"></div>
+        <div class="field" style="margin-top:6px">
+          <input class="input" type="text" value="Krian" placeholder="为你的角色命名" />
+        </div>
+
+        <!-- 03 职业 -->
+        <div class="sec-title"><span class="cc-num">03</span> 职业</div>
+        <div class="sec-rule"></div>
+        <div class="class-grid" id="classGrid" style="margin-bottom:10px"></div>
+
+        <!-- 04 生日 / 星座 -->
+        <div class="sec-title"><span class="cc-num">04</span> 生日 / 星座</div>
+        <div class="sec-rule"></div>
+        <div class="row" style="margin-bottom:18px">
+          <input class="input" type="date" value="1998-01-07" style="max-width:200px" />
+          <div class="zodiac"><span style="font-size:18px">♑</span> <span style="font-weight:700">摩羯座</span></div>
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit">▶ 开始冒险</button>
+      </form>
+
+      <div class="auth__footer">© 2026 PixelPack <span class="auth__cursor">_</span></div>
+    </div>
+  </div>
+
+  <script>
+    const CLASSES = [
+      ['🌾','农夫','程序员'],['🔮','魔法师','UI设计师'],['📚','学者','大学生'],
+      ['⚔️','战士','后端工程师'],['🗡️','盗贼','产品经理'],['✨','牧师','运维工程师'],
+      ['🏹','猎人','测试工程师'],['💰','商人','项目经理'],['🎵','吟游诗人','自媒体运营'],
+      ['⚗️','炼金术士','数据分析师'],['🔨','铁匠','硬件工程师'],['🧭','流浪者','自由职业'],
+    ];
+    const grid = document.getElementById('classGrid');
+    CLASSES.forEach((c,i)=>{
+      const card = document.createElement('button');
+      card.type='button';
+      card.className = 'class-card' + (i===0?' is-on':'');
+      card.innerHTML = `<div class="class-card__gly">${c[0]}</div><div class="class-card__rpg">${c[1]}</div><div class="class-card__real">${c[2]}</div>`;
+      card.addEventListener('click',()=>{
+        grid.querySelectorAll('.class-card').forEach(x=>x.classList.remove('is-on'));
+        card.classList.add('is-on');
+      });
+      grid.appendChild(card);
+    });
+  </script>
+  <script src="main.js"></script>
+</body>
+</html>

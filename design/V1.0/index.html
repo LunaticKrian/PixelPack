@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelPack · 冒险者背包</title>
+  <meta name="description" content="RPG 像素风物品管理 — 蓝白灰冷调 UI 原型" />
+
+  <!-- 像素字体：Press Start 2P (拉丁/数字) + DotGothic16 (含中文点阵) + Pixelify Sans (后备) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 环境层：洞穴地牢 —— 缓慢漂移的像素网格 + 星尘 -->
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient__grid"></div>
+    <div class="ambient__dust"></div>
+  </div>
+
+  <!-- 游戏视口 -->
+  <main class="screen" id="screen">
+
+    <!-- ── 顶部状态栏 ───────────────────────────────── -->
+    <header class="statusbar">
+      <div class="statusbar__id">
+        <div class="portrait">🧭</div>
+        <div class="statusbar__id-text">
+          <div class="statusbar__name">流浪商人 · KRIAN</div>
+          <div class="statusbar__sub">LV.12 · 寒霜探险家</div>
+        </div>
+      </div>
+
+      <div class="statusbar__cap">
+        <span class="statusbar__label">背包</span>
+        <div class="capbar"><div class="capbar__fill" id="capFill"></div></div>
+        <span class="capbar__num" id="capNum">0 / 30</span>
+      </div>
+
+      <div class="statusbar__gold">
+        <span class="statusbar__label">金币</span>
+        <span class="gold-coin">💰</span>
+        <span class="gold-num">1,280</span>
+      </div>
+    </header>
+
+    <div class="divider"></div>
+
+    <!-- ── 筛选标签 ─────────────────────────────────── -->
+    <nav class="tabs" id="tabs" aria-label="物品分类">
+      <button class="tab is-active" data-filter="all">✦ 全部</button>
+      <button class="tab" data-filter="weapon">⚔ 武器</button>
+      <button class="tab" data-filter="armor">🛡 防具</button>
+      <button class="tab" data-filter="consumable">🧪 消耗品</button>
+      <button class="tab" data-filter="material">◈ 材料</button>
+    </nav>
+
+    <!-- ── 工作区：网格 + 详情 ─────────────────────── -->
+    <div class="workspace">
+      <section class="grid" id="grid" aria-label="物品栏"></section>
+
+      <aside class="detail" id="detail" aria-live="polite">
+        <!-- 由 JS 注入 -->
+      </aside>
+    </div>
+
+    <!-- ── 底部指令提示 ─────────────────────────────── -->
+    <footer class="hintbar">
+      <span class="hint"><kbd>←↑↓→</kbd> 选择</span>
+      <span class="hint"><kbd>Enter</kbd> 装备 / 卸下</span>
+      <span class="hint"><kbd>X</kbd> 丢弃</span>
+      <span class="hint hint--right">寒霜洞穴 · B2F</span>
+    </footer>
+  </main>
+
+  <!-- 像素 Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

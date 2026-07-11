@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>个人设置 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="settings" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content content--centered">
+      <div style="max-width:600px">
+        <div class="toolbar" style="margin-bottom:14px">
+          <a class="btn btn--sm btn--ghost" href="index.html">◀ 角色信息</a>
+          <div class="toolbar__title">◈ 个人设置</div>
+        </div>
+
+        <!-- 基本信息 -->
+        <div class="panel" style="margin-bottom:14px">
+          <div class="panel__head"><div class="panel__title">☺ 基本信息</div></div>
+          <div class="panel__body">
+            <div class="field"><label class="field__label">用户名</label><input class="input" value="krian" readonly style="opacity:.6" /></div>
+            <div class="field"><label class="field__label">邮箱</label><input class="input" type="email" value="krian@example.com" /></div>
+            <div class="field"><label class="field__label">头像 URL</label><input class="input" value="https://example.com/avatar.png" /></div>
+            <button class="btn btn--primary" onclick="notify('基本信息已保存','ok')">✓ 保存</button>
+          </div>
+        </div>
+
+        <!-- 修改密码 -->
+        <div class="panel" style="margin-bottom:14px">
+          <div class="panel__head"><div class="panel__title">▣ 修改密码</div></div>
+          <div class="panel__body">
+            <div class="field"><label class="field__label">旧密码</label><input class="input" type="password" placeholder="••••••" /></div>
+            <div class="field"><label class="field__label">新密码</label><input class="input" type="password" placeholder="6位以上" /></div>
+            <div class="field"><label class="field__label">确认新密码</label><input class="input" type="password" placeholder="再次输入" /></div>
+            <button class="btn btn--primary" onclick="notify('密码已修改','ok')">✓ 修改密码</button>
+          </div>
+        </div>
+
+        <!-- 账户信息 -->
+        <div class="panel">
+          <div class="panel__head"><div class="panel__title">▤ 账户信息</div></div>
+          <div class="panel__body">
+            <div class="info-grid">
+              <span class="info-grid__k">注册时间</span><span class="info-grid__v">2024-10-12</span>
+              <span class="info-grid__k">用户 ID</span><span class="info-grid__v" style="font-size:8px">#1024</span>
+              <span class="info-grid__k">角色等级</span><span class="info-grid__v t-gold">Lv.12</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据统计 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .chart-svg{width:100%;height:auto;display:block;background:var(--bg-inset);border:2px solid var(--line-dark)}
+    .chart-svg text{font-family:'Press Start 2P',monospace;fill:var(--text-faint)}
+    .chart-svg .grid{stroke:var(--bg-card);stroke-width:1;stroke-dasharray:3 3}
+    .chart-svg .bar{fill:var(--accent)}
+    .chart-svg .bar2{fill:var(--accent-bright)}
+    .chart-svg .line{fill:none;stroke:var(--gold);stroke-width:2}
+    .chart-svg .dot{fill:var(--gold);stroke:var(--line-dark);stroke-width:1}
+    .axis-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--text-faint)}
+  </style>
+</head>
+<body data-page="stats" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content">
+      <div class="toolbar" style="margin-bottom:14px">
+        <a class="btn btn--sm btn--ghost" href="index.html">◀ 角色信息</a>
+        <div class="toolbar__title">◢ 数据统计</div>
+      </div>
+
+      <!-- 筛选条 -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel__body row">
+          <div class="field" style="margin:0"><label class="field__label">开始日期</label><input class="input" type="date" value="2026-01-01" style="max-width:160px" /></div>
+          <div class="field" style="margin:0"><label class="field__label">结束日期</label><input class="input" type="date" value="2026-07-11" style="max-width:160px" /></div>
+          <div class="field" style="margin:0"><label class="field__label">周期</label><select class="select"><option>月</option><option>季</option><option>年</option></select></div>
+          <button class="btn btn--primary" style="align-self:flex-end" onclick="notify('数据已刷新','ok')">↻ 刷新</button>
+        </div>
+      </div>
+
+      <!-- 概览 -->
+      <div class="grid stagger" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px" id="overviewGrid"></div>
+
+      <!-- 分类分析 -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel__head"><div class="panel__title">▦ 分类分析</div></div>
+        <div class="panel__body" style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center">
+          <div class="donut" style="background:conic-gradient(var(--accent) 0 38%,var(--ok) 38% 63%,var(--warn) 63% 83%,var(--gold) 83% 95%,var(--muted) 95% 100%)">
+            <div class="donut__hole"><div><div class="donut__hole-num">¥18.6K</div><div class="donut__hole-lbl">资产总值</div></div></div>
+          </div>
+          <table class="ptable">
+            <thead><tr><th>分类</th><th>数量</th><th>价值</th><th>日均</th></tr></thead>
+            <tbody>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:var(--accent);vertical-align:middle;margin-right:6px"></span>电子设备</td><td class="num">9</td><td class="num">¥9,200</td><td class="num">4.2</td></tr>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:var(--ok);vertical-align:middle;margin-right:6px"></span>服饰</td><td class="num">6</td><td class="num">¥3,800</td><td class="num">1.8</td></tr>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:var(--warn);vertical-align:middle;margin-right:6px"></span>工具</td><td class="num">5</td><td class="num">¥2,100</td><td class="num">0.6</td></tr>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:var(--gold);vertical-align:middle;margin-right:6px"></span>书籍</td><td class="num">3</td><td class="num">¥860</td><td class="num">0.3</td></tr>
+              <tr><td><span class="legend__sq" style="display:inline-block;width:10px;height:10px;background:var(--muted);vertical-align:middle;margin-right:6px"></span>其他</td><td class="num">1</td><td class="num">¥2,640</td><td class="num">1.7</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 成本分析 -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel__head"><div class="panel__title">◢ 成本分析 · 日均成本 TOP</div></div>
+        <div class="panel__body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div>
+            <div class="barchart" id="costBar"></div>
+          </div>
+          <div>
+            <div class="sec-title" style="font-size:12px;margin-bottom:10px">状态分布</div>
+            <div class="status-row"><span>使用中</span><div class="status-row__track"><div class="status-row__fill" style="width:79%;background:var(--ok)"></div></div><span class="status-row__num">19 (79%)</span></div>
+            <div class="status-row"><span>闲置</span><div class="status-row__track"><div class="status-row__fill" style="width:17%;background:var(--warn)"></div></div><span class="status-row__num">4 (17%)</span></div>
+            <div class="status-row"><span>退役</span><div class="status-row__track"><div class="status-row__fill" style="width:4%;background:var(--muted)"></div></div><span class="status-row__num">1 (4%)</span></div>
+            <div class="status-row"><span>已售</span><div class="status-row__track"><div class="status-row__fill" style="width:0%;background:var(--info)"></div></div><span class="status-row__num">0 (0%)</span></div>
+            <div class="status-row"><span>已弃</span><div class="status-row__track"><div class="status-row__fill" style="width:0%;background:var(--danger)"></div></div><span class="status-row__num">0 (0%)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 消费趋势 -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel__head"><div class="panel__title">📈 消费趋势 · 月度支出 / 累计</div>
+          <span class="row" style="margin-left:auto;gap:14px">
+            <span class="legend__row"><span class="legend__sq" style="background:var(--accent)"></span><span class="axis-label">月支出</span></span>
+            <span class="legend__row"><span class="legend__sq" style="background:var(--gold)"></span><span class="axis-label">累计</span></span>
+          </span>
+        </div>
+        <div class="panel__body">
+          <svg class="chart-svg" viewBox="0 0 660 250" preserveAspectRatio="xMidYMid meet">
+            <!-- 网格 -->
+            <line class="grid" x1="60" y1="40" x2="620" y2="40"/><line class="grid" x1="60" y1="80" x2="620" y2="80"/>
+            <line class="grid" x1="60" y1="120" x2="620" y2="120"/><line class="grid" x1="60" y1="160" x2="620" y2="160"/>
+            <line x1="60" y1="200" x2="620" y2="200" stroke="#4A5E7A" stroke-width="2"/>
+            <!-- 左轴标签（月支出） -->
+            <text x="54" y="44" text-anchor="end">1500</text><text x="54" y="84" text-anchor="end">1125</text>
+            <text x="54" y="124" text-anchor="end">750</text><text x="54" y="164" text-anchor="end">375</text><text x="54" y="204" text-anchor="end">0</text>
+            <!-- 右轴标签（累计） -->
+            <text x="626" y="44">7000</text><text x="626" y="84">5250</text><text x="626" y="124">3500</text><text x="626" y="164">1750</text>
+            <!-- 月支出柱 -->
+            <g>
+              <rect class="bar" x="81" y="118" width="50" height="82"/><rect class="bar" x="174" y="76" width="50" height="124"/>
+              <rect class="bar" x="267" y="105" width="50" height="95"/><rect class="bar" x="360" y="50" width="50" height="150"/>
+              <rect class="bar" x="453" y="90" width="50" height="110"/><rect class="bar" x="546" y="62" width="50" height="138"/>
+            </g>
+            <!-- 累计折线 -->
+            <polyline class="line" points="106,182 199,156 292,135 385,103 478,80 571,50"/>
+            <circle class="dot" cx="106" cy="182" r="3"/><circle class="dot" cx="199" cy="156" r="3"/>
+            <circle class="dot" cx="292" cy="135" r="3"/><circle class="dot" cx="385" cy="103" r="3"/>
+            <circle class="dot" cx="478" cy="80" r="3"/><circle class="dot" cx="571" cy="50" r="3"/>
+            <!-- X 轴月份 -->
+            <text x="106" y="220" text-anchor="middle">1月</text><text x="199" y="220" text-anchor="middle">2月</text>
+            <text x="292" y="220" text-anchor="middle">3月</text><text x="385" y="220" text-anchor="middle">4月</text>
+            <text x="478" y="220" text-anchor="middle">5月</text><text x="571" y="220" text-anchor="middle">6月</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 保修与生命周期 -->
+      <div class="panel">
+        <div class="panel__head"><div class="panel__title">! 保修与生命周期</div></div>
+        <div class="panel__body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div>
+            <div class="sec-title" style="font-size:12px;margin-bottom:10px">保修提醒（90 天内）</div>
+            <div id="warrantyStats"></div>
+          </div>
+          <div>
+            <div class="sec-title" style="font-size:12px;margin-bottom:10px">生命周期分布</div>
+            <div class="status-row"><span>使用中</span><div class="status-row__track"><div class="status-row__fill" style="width:79%;background:var(--ok)"></div></div><span class="status-row__num">19</span></div>
+            <div class="status-row"><span>闲置</span><div class="status-row__track"><div class="status-row__fill" style="width:17%;background:var(--warn)"></div></div><span class="status-row__num">4</span></div>
+            <div class="status-row"><span>退役</span><div class="status-row__track"><div class="status-row__fill" style="width:4%;background:var(--muted)"></div></div><span class="status-row__num">1</span></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    // 概览
+    const OV = [['◆','物品总数','24'],['$','资产总值','¥18.6K'],['◢','日均成本','8.6/天'],['▶','使用中','19']];
+    const og = document.getElementById('overviewGrid');
+    OV.forEach(o=> og.insertAdjacentHTML('beforeend', `<div class="stat-card"><div class="stat-card__gly">${o[0]}</div><div class="stat-card__label">${o[1]}</div><div class="stat-card__value">${o[2]}</div></div>`));
+
+    // 成本排行条形
+    const RANK = [['微单相机',12.0,'100%'],['显示器',4.2,'35%'],['降噪耳机',3.5,'29%'],['智能手表',1.9,'16%'],['冲锋衣',1.8,'15%'],['机械键盘',1.2,'10%'],['保温杯',0.4,'3%']];
+    const colors=['var(--danger)','var(--warn)','var(--warn)','var(--accent)','var(--accent)','var(--accent-bright)','var(--info)'];
+    const cb = document.getElementById('costBar');
+    RANK.forEach((r,i)=> cb.insertAdjacentHTML('beforeend', `
+      <div class="barchart__row">
+        <span class="barchart__name">${r[0]}</span>
+        <div class="barchart__track"><div class="barchart__fill" style="width:${r[2]};background:${colors[i]}"></div></div>
+        <span class="barchart__val">¥${r[1]}</span>
+      </div>`));
+
+    // 保修
+    const W = [['降噪耳机',3,899,'urgent'],['显示器支架',12,159,''],['机械键盘',25,699,''],['微单相机',47,5200,''],['智能手表',68,1280,'']];
+    const ws = document.getElementById('warrantyStats');
+    W.forEach(w=> ws.insertAdjacentHTML('beforeend', `
+      <div class="li-row" style="border-bottom:2px solid var(--line-dim);padding:8px 0">
+        <span class="dot ${w[3]==='urgent'?'s-discarded':'s-idle'}"></span>
+        <span class="li-row__name">${w[0]} <span class="t-faint">¥${w[2]}</span></span>
+        <span class="li-row__meta ${w[3]}">${w[1]}天</span>
+      </div>`));
+  </script>
+</body>
+</html>

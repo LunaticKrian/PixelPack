@@ -4,7 +4,10 @@ sqlalchemy[asyncio]
 aiosqlite
 alembic
 pydantic-settings
+email-validator
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 Pillow
+
+

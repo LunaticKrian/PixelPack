@@ -62,13 +62,23 @@ PixelPack/
 
 ### 后端
 
+虚拟环境创建在**项目根目录**（前后端共用一个仓库，Python 仅用于后端）：
+
 ```bash
-cd server
+# 在项目根目录
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r server/requirements.txt
+```
+
+启动开发服务器（⚠️ 必须在 `server/` 目录下运行，因为 `DATABASE_URL` 和 `UPLOAD_DIR` 是相对路径）：
+
+```bash
+cd server
 uvicorn app.main:app --reload --port 8000
 ```
+
+启动后访问 `http://127.0.0.1:8000/docs` 查看 API 文档。
 
 ### 前端
 

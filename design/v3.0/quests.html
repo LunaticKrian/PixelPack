@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>任务系统 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .q-layout{display:grid;grid-template-columns:1fr 3fr;gap:14px;align-items:start}
+    @media(max-width:900px){.q-layout{grid-template-columns:1fr}}
+    .ach-card{padding:12px;background:var(--bg-card);border:3px solid var(--line-grey);box-shadow:var(--sh-frame),var(--sh1);transition:transform .08s steps(2)}
+    .ach-card:hover{transform:translateY(-2px);background:var(--bg-card-2)}
+    .ach-card--locked{opacity:.55}
+    .ach-card__gly{width:48px;height:48px;display:grid;place-items:center;font-size:26px;background:var(--bg-inset);border:2px solid var(--line-dark);box-shadow:inset 2px 2px 0 #0006;margin-bottom:8px}
+    .ach-card--unlocked .ach-card__gly{border-color:var(--gold);color:var(--gold)}
+    .ach-card__name{font-weight:700;font-size:13px}
+    .ach-card__desc{font-size:12px;color:var(--text-dim);margin:3px 0 7px;line-height:1.4}
+    .ach-card__foot{display:flex;justify-content:space-between;font-family:var(--font-pixel);font-size:8px}
+  </style>
+</head>
+<body data-page="quests" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content">
+      <div class="q-layout">
+
+        <!-- ════ 侧栏 ════ -->
+        <aside style="display:flex;flex-direction:column;gap:12px">
+          <div class="panel">
+            <div class="panel__body" style="text-align:center">
+              <div class="portrait" style="margin:0 auto 10px;width:90px;font-size:42px">🧭</div>
+              <div class="char-name">冒险者 Krian</div>
+              <div class="char-lv">Lv.12</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">◈ 等级信息</div></div>
+            <div class="panel__body">
+              <div class="char-statrow"><span class="t-dim">当前等级</span><span class="t-num t-gold">Lv.12</span></div>
+              <div class="char-statrow"><span class="t-dim">总经验值</span><span class="t-num">3,640</span></div>
+              <div class="barline" style="margin-top:8px"><span class="barline__label exp">EXP</span><div class="bar bar--exp"><div class="bar__fill" style="width:64%"></div><div class="bar__txt">640/1000</div></div></div>
+              <div class="t-faint t-pixel" style="font-size:8px;margin-top:6px">距下一级 360 EXP</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">▣ 每日任务</div></div>
+            <div class="panel__body">
+              <div class="char-statrow"><span class="t-dim">已完成</span><span class="t-num t-ok">2 / 6</span></div>
+              <div class="char-statrow"><span class="t-dim">任务 EXP</span><span class="t-num">25 / 75</span></div>
+              <div class="bar bar--exp" style="margin-top:8px"><div class="bar__fill" style="width:33%"></div><div class="bar__txt">33%</div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">★ 成就进度</div></div>
+            <div class="panel__body">
+              <div class="char-statrow"><span class="t-dim">已解锁</span><span class="t-num t-gold">12 / 32</span></div>
+              <div class="char-statrow"><span class="t-dim">成就 EXP</span><span class="t-num">1,200 / 3,800</span></div>
+              <div class="bar bar--hp" style="margin-top:8px"><div class="bar__fill" style="width:37.5%;background-color:var(--gold)"></div><div class="bar__txt">37.5%</div></div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- ════ 主区 ════ -->
+        <section>
+          <div class="toolbar">
+            <a class="btn btn--sm btn--ghost" href="index.html">◀ 角色信息</a>
+            <div class="toolbar__title">▣ 任务系统</div>
+            <span class="t-faint t-pixel" style="font-size:8px;margin-left:auto">2026-07-11</span>
+          </div>
+
+          <div class="tabs" data-tab-group style="margin:14px 0">
+            <button class="tab is-active" data-tab="daily">▣ 每日</button>
+            <button class="tab" data-tab="ach">★ 成就</button>
+          </div>
+
+          <!-- 每日任务 -->
+          <div data-tab-panel="daily">
+            <div class="grid stagger" style="grid-template-columns:repeat(3,1fr)" id="dailyGrid"></div>
+          </div>
+
+          <!-- 成就 -->
+          <div data-tab-panel="ach" style="display:none">
+            <div class="grid stagger" style="grid-template-columns:repeat(4,1fr)" id="achGrid"></div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    const DAILY = [
+      ['登录游戏','每日首次登录',1,1,5,true],
+      ['添加物品','新登记 1 件物品',0,1,15,false],
+      ['查看统计','检视数据看板',1,1,10,true],
+      ['记录消费','记下今日开销',0,3,20,false],
+      ['整理背包','整理 3 件物品',2,3,15,false],
+      ['检视成就','查看成就页',0,1,10,false],
+    ];
+    const dg = document.getElementById('dailyGrid');
+    DAILY.forEach(q=>{
+      const pct=Math.round(q[2]/q[3]*100);
+      dg.insertAdjacentHTML('beforeend', `
+        <div class="qc ${q[6]?'qc--done':''}">
+          <div class="qc__name">${q[6]?'✓':'○'} ${q[0]}</div>
+          <div class="qc__desc">${q[1]}</div>
+          <div class="bar" style="height:10px"><div class="bar__fill" style="width:${pct}%;background-color:${q[6]?'var(--gold)':'var(--accent)'}"></div></div>
+          <div class="qc__foot"><span>${q[2]}/${q[3]}</span><span class="${q[6]?'t-gold':''}">${q[6]?'✓ 已获得':'+'+q[4]+' EXP'}</span></div>
+        </div>`);
+    });
+
+    const ACH = [
+      ['⚔️','初出茅庐','添加第一件物品',50,true,'2024-10-12'],
+      ['📦','收藏家','拥有 10 件物品',100,true,'2024-11-20'],
+      ['💎','收集达人','拥有 20 件物品',200,true,'2025-03-08'],
+      ['🎯','数据控','首次查看统计',30,true,'2024-10-15'],
+      ['🏆','勤勉者','连续登录 7 天',150,true,'2024-10-19'],
+      ['🌟','任务大师','完成 50 个每日任务',300,true,'2025-01-05'],
+      ['🔥','烈火心','连续登录 30 天',500,true,'2025-11-11'],
+      ['❄️','冷静分析','查看 10 次统计',80,true,'2025-02-02'],
+      ['🛡️','精打细算','记录 100 次消费',250,true,'2025-04-18'],
+      ['💰','理财高手','资产总值破 1 万',400,true,'2025-05-22'],
+      ['📖','记录者','写 10 篇日志',120,true,'2025-06-30'],
+      ['🧭','探险家','解锁所有分类',200,true,'2025-07-01'],
+      ['🗝️','秘境探寻','拥有 30 件物品',500,false,null],
+      ['👑','传奇','资产总值破 10 万',2000,false,null],
+      ['🪄','魔法师','解锁全部成就',5000,false,null],
+      ['🐉','屠龙者','拥有传说品质物品',1000,false,null],
+    ];
+    const ag = document.getElementById('achGrid');
+    ACH.forEach(a=>{
+      const on=a[4]; const date=a[5];
+      ag.insertAdjacentHTML('beforeend', `
+        <div class="ach-card ${on?'ach-card--unlocked':'ach-card--locked'}">
+          <div class="ach-card__gly">${on?a[0]:'?'}</div>
+          <div class="ach-card__name">${a[1]}</div>
+          <div class="ach-card__desc">${a[2]}</div>
+          <div class="ach-card__foot">
+            <span class="t-gold">+${a[3]}</span>
+            <span class="${on?'t-ok':'t-faint'}">${on?'✓ '+(date||''):'未解锁'}</span>
+          </div>
+        </div>`);
+    });
+  </script>
+</body>
+</html>

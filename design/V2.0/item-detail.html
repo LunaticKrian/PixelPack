@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>机械键盘 · 物品详情</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="item-detail" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content">
+      <div class="toolbar" style="margin-bottom:14px">
+        <a class="btn btn--sm btn--ghost" href="items.html">◀ 背包</a>
+        <div class="toolbar__title">▶ 物品详情</div>
+      </div>
+
+      <div class="detail-grid">
+
+        <!-- ════ 左列 ════ -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <!-- 图库 -->
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">▦ 图片</div><button class="btn btn--sm" style="margin-left:auto" onclick="notify('上传图片（演示）')">＋ 上传</button></div>
+            <div class="panel__body">
+              <div class="gallery">
+                <div class="gallery__main">
+                  <button class="gallery__nav gallery__nav--l">◀</button>
+                  <span>⌨️</span>
+                  <button class="gallery__nav gallery__nav--r">▶</button>
+                  <div class="gallery__count">1 / 3</div>
+                </div>
+                <div class="gallery__thumbs">
+                  <div class="thumb" style="border-color:var(--accent-bright)">⌨️</div>
+                  <div class="thumb">📦</div>
+                  <div class="thumb">🔧</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 物品标题 -->
+          <div class="panel">
+            <div class="panel__body">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span style="font-size:22px;font-weight:700">机械键盘</span>
+                <span class="badge s-active">使用中</span>
+              </div>
+              <p class="t-dim" style="margin-top:8px;font-size:13px;line-height:1.5">客制化 75% 配列机械键盘，Gasket 结构，轴体为录制线性轴。日常码字与游戏主力输入设备。</p>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:10px">
+                <span class="tag-chip">电子设备</span>
+                <span class="tag-chip">生产力</span>
+                <span class="tag-chip">客制化</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 物品信息 -->
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">[ 物品信息 ]</div></div>
+            <div class="panel__body">
+              <div class="info-grid">
+                <span class="info-grid__k">购买日期</span><span class="info-grid__v">2024-11-02</span>
+                <span class="info-grid__k">购买价格</span><span class="info-grid__v hi">¥899</span>
+                <span class="info-grid__k">购买渠道</span><span class="info-grid__v">京东</span>
+                <span class="info-grid__k">当前价值</span><span class="info-grid__v">¥650</span>
+                <span class="info-grid__k">保修到期</span><span class="info-grid__v">2026-08-05</span>
+                <span class="info-grid__k">预期寿命</span><span class="info-grid__v">1825 天</span>
+                <span class="info-grid__k">使用次数</span><span class="info-grid__v">1480</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ 右列 ════ -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <!-- 成本分析 -->
+          <div class="panel panel--lift">
+            <div class="panel__head"><div class="panel__title">[ 成本分析 ]</div></div>
+            <div class="panel__body">
+              <div class="cost-hero" style="margin-bottom:14px">
+                <div class="cost-hero__label">日均成本 · DAILY COST</div>
+                <div class="cost-hero__value">1.2 💰</div>
+              </div>
+              <div class="info-grid">
+                <span class="info-grid__k">总投入</span><span class="info-grid__v">¥915</span>
+                <span class="info-grid__k">使用天数</span><span class="info-grid__v">582 天</span>
+                <span class="info-grid__k">单次成本</span><span class="info-grid__v">¥0.62</span>
+                <span class="info-grid__k">日均损耗</span><span class="info-grid__v">¥0.43</span>
+                <span class="info-grid__k">附加费用</span><span class="info-grid__v">¥16</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 操作 -->
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">▶ 操作</div></div>
+            <div class="panel__body" style="display:flex;flex-direction:column;gap:8px">
+              <a class="btn btn--block" href="items.html">✎ 编辑</a>
+              <button class="btn btn--block" onclick="openModal('statusModal')">△ 状态</button>
+              <button class="btn btn--danger btn--block" onclick="openModal('delModal')">✕ 删除</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ════ 附加费用（全宽）════ -->
+      <div class="panel" style="margin-top:14px">
+        <div class="panel__head">
+          <div class="panel__title">[ 附加费用 ]</div>
+          <button class="btn btn--sm" style="margin-left:auto" onclick="notify('添加附加费用（演示）')">＋ 添加</button>
+        </div>
+        <div class="panel__body panel__body--flush">
+          <table class="ptable">
+            <thead><tr><th>名称</th><th>金额</th><th>日期</th><th style="width:60px"></th></tr></thead>
+            <tbody>
+              <tr><td>键帽套装</td><td class="num">¥120</td><td>2025-02-14</td><td><button class="btn btn--sm btn--danger" onclick="notify('已删除','err')">✕</button></td></tr>
+              <tr><td>润轴脂</td><td class="num">¥25</td><td>2025-06-20</td><td><button class="btn btn--sm btn--danger" onclick="notify('已删除','err')">✕</button></td></tr>
+              <tr><td>运输保险</td><td class="num">¥8</td><td>2024-11-02</td><td><button class="btn btn--sm btn--danger" onclick="notify('已删除','err')">✕</button></td></tr>
+            </tbody>
+            <tfoot><tr><td style="font-weight:700">合计</td><td class="num t-gold" style="font-size:13px">¥153</td><td colspan="2"></td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <!-- 状态变更模态 -->
+  <div class="modal" id="statusModal">
+    <div class="modal__overlay"></div>
+    <div class="modal__box">
+      <div class="modal__head"><div class="modal__title">△ 变更状态</div><button class="modal__close" data-close>✕</button></div>
+      <div class="modal__body">
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="statusGrid"></div>
+        <div class="field"><label class="field__label">原因（选填）</label><textarea class="textarea" placeholder="例如：升级换代、损坏…"></textarea></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn--ghost" data-close style="flex:1">取消</button>
+          <button class="btn btn--primary" data-close onclick="notify('状态已更新','ok')" style="flex:1">确认</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认 -->
+  <div class="modal" id="delModal">
+    <div class="modal__overlay"></div>
+    <div class="modal__box" style="max-width:400px">
+      <div class="modal__head"><div class="modal__title">✕ 删除物品</div><button class="modal__close" data-close>✕</button></div>
+      <div class="modal__body" style="text-align:center">
+        <div style="font-size:40px;margin-bottom:10px">🗑</div>
+        <p style="margin-bottom:6px">确定要删除「<span class="t-gold" style="font-weight:700">机械键盘</span>」吗？</p>
+        <p class="t-faint t-pixel" style="font-size:8px;margin-bottom:16px">物品将移入回收站，30 天内可恢复</p>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn--ghost" data-close style="flex:1">取消</button>
+          <button class="btn btn--danger" data-close onclick="notify('已移入回收站','warn');setTimeout(()=>location.href='items.html',700)" style="flex:1">确认删除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    const STATUSES = [['s-active','使用中','ok'],['s-idle','闲置','warn'],['s-retired','退役','muted'],['s-sold','已售','info'],['s-discarded','已弃','danger']];
+    const sg = document.getElementById('statusGrid');
+    STATUSES.forEach((s,i)=>{
+      sg.insertAdjacentHTML('beforeend', `
+        <button class="btn ${i===0?'btn--primary':''}" style="text-align:left" onclick="document.querySelectorAll('#statusGrid .btn').forEach(b=>b.className='btn');this.classList.add('btn--primary')">
+          <span class="dot ${s[0]}" style="margin-right:6px"></span>${s[1]}
+        </button>`);
+    });
+  </script>
+</body>
+</html>

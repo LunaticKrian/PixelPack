@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>角色信息 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="index" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content">
+      <div class="dash">
+
+        <!-- ════ 角色面板 ════ -->
+        <section class="panel panel--lift">
+          <div class="panel__head"><div class="panel__title">◈ 角色信息</div><span class="t-faint t-pixel" style="font-size:8px;margin-left:auto">DBLCLICK PORTRAIT TO EDIT</span></div>
+          <div class="panel__body">
+            <div class="char-top">
+              <div class="portrait" ondblclick="openModal('charModal')" title="双击编辑">🧭</div>
+              <div>
+                <div class="speech" data-typewriter='["欢迎回来，冒险者 Krian。","今天的每日任务还差 2 个未完成。","⚠ 有 2 件物品即将过保修期。"]'>…</div>
+              </div>
+            </div>
+            <div style="margin-top:14px">
+              <div class="char-name">冒险者 Krian</div>
+              <div class="char-lv">Lv.12</div>
+              <span class="class-badge">流浪者 · 自由职业</span>
+
+              <div style="margin-top:12px">
+                <div class="char-statrow"><span><span class="char-statrow__gly">◆</span>金币 / 资产总值</span><span class="t-num t-gold">1,280 💰</span></div>
+                <div class="char-statrow"><span><span class="char-statrow__gly">◈</span>物品 / 总数</span><span class="t-num">24 / 30</span></div>
+                <div class="char-statrow"><span><span class="char-statrow__gly">▶</span>日均成本</span><span class="t-num t-accent">8.6 💰/天</span></div>
+              </div>
+
+              <div style="margin-top:10px">
+                <div class="barline"><span class="barline__label hp">HP</span><div class="bar bar--hp"><div class="bar__fill" style="width:80%"></div><div class="bar__txt">24 / 30</div></div></div>
+                <div class="barline"><span class="barline__label mp">MP</span><div class="bar bar--mp"><div class="bar__fill" style="width:33%"></div><div class="bar__txt">10 / 30</div></div></div>
+                <div class="barline"><span class="barline__label exp">EXP</span><div class="bar bar--exp"><div class="bar__fill" style="width:64%"></div><div class="bar__txt">640 / 1000</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 每日任务 -->
+          <div class="panel__body" style="border-top:2px solid var(--line-dim);background:var(--bg-deep)">
+            <div class="sec-title"><span class="sec-title__gly">▣</span> 每日任务 <span class="t-faint t-pixel" style="font-size:8px;margin-left:auto">2026-07-11</span></div>
+            <div class="grid stagger" style="grid-template-columns:repeat(3,1fr);margin-top:10px" id="dashQuests"></div>
+          </div>
+
+          <!-- 成就 -->
+          <div class="panel__body" style="border-top:2px solid var(--line-dim)">
+            <div class="sec-title"><span class="sec-title__gly">★</span> 成就 <span class="t-num t-gold" style="margin-left:auto">12 / 32</span></div>
+            <div class="ach-grid" style="margin-top:10px" id="dashAch"></div>
+          </div>
+        </section>
+
+        <!-- ════ 冒险日志 ════ -->
+        <section class="panel">
+          <div class="panel__head">
+            <div class="panel__title">◈ 冒险日志</div>
+            <button class="btn btn--sm" style="margin-left:auto" onclick="notify('新建日志入口（演示）')">＋ 新建</button>
+          </div>
+          <div class="panel__body" id="journalList" style="max-height:560px;overflow:auto"></div>
+        </section>
+
+        <!-- ════ 侧栏 ════ -->
+        <aside style="display:flex;flex-direction:column;gap:12px">
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">▤ 系统菜单</div></div>
+            <div class="panel__body">
+              <div class="menu-grid">
+                <a class="menu-btn" href="items.html"><span class="menu-btn__gly">◆</span><span class="menu-btn__txt">背包</span></a>
+                <a class="menu-btn" href="quests.html"><span class="menu-btn__gly">▣</span><span class="menu-btn__txt">任务</span></a>
+                <a class="menu-btn" href="blog.html"><span class="menu-btn__gly">✦</span><span class="menu-btn__txt">日志</span></a>
+                <a class="menu-btn" href="stats.html"><span class="menu-btn__gly">◢</span><span class="menu-btn__txt">统计</span></a>
+                <a class="menu-btn" href="categories.html"><span class="menu-btn__gly">▦</span><span class="menu-btn__txt">分类</span></a>
+                <a class="menu-btn" href="settings.html"><span class="menu-btn__gly">◈</span><span class="menu-btn__txt">设置</span></a>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">★ 最近获取</div></div>
+            <div class="panel__body" id="recentList"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><div class="panel__title">! 保修提醒</div></div>
+            <div class="panel__body" id="warrantyList"></div>
+          </div>
+        </aside>
+
+      </div>
+    </main>
+
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <!-- ════ 模态：角色信息编辑 ════ -->
+  <div class="modal" id="charModal">
+    <div class="modal__overlay"></div>
+    <div class="modal__box">
+      <div class="modal__head"><div class="modal__title">▶ 角色信息</div><button class="modal__close" data-close>✕</button></div>
+      <div class="modal__body">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:14px;margin-bottom:14px">
+          <div class="portrait" style="width:90px;font-size:42px">🧭</div>
+          <div class="field" style="margin:0"><label class="field__label">角色名</label><input class="input" value="Krian" /></div>
+        </div>
+        <div class="field"><label class="field__label">职业</label><input class="input" value="流浪者 | 自由职业" /></div>
+        <div class="field"><label class="field__label">生日</label><input class="input" type="date" value="1998-01-07" /></div>
+        <button class="btn btn--primary btn--block" data-close onclick="notify('已保存','ok')">✓ 保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 模态：物品快览 ════ -->
+  <div class="modal" id="itemModal">
+    <div class="modal__overlay"></div>
+    <div class="modal__box">
+      <div class="modal__head"><div class="modal__title">▶ 物品详情</div><button class="modal__close" data-close>✕</button></div>
+      <div class="modal__body" id="itemModalBody"></div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    // —— 每日任务 ——
+    const QUESTS = [
+      { name:'登录游戏', desc:'每日首次登录', p:1, t:1, exp:5, done:true },
+      { name:'添加物品', desc:'新登记 1 件物品', p:0, t:1, exp:15 },
+      { name:'查看统计', desc:'检视数据看板', p:1, t:1, exp:10, done:true },
+      { name:'记录消费', desc:'记下今日开销', p:0, t:3, exp:20 },
+      { name:'整理背包', desc:'整理 3 件物品', p:2, t:3, exp:15 },
+      { name:'检视成就', desc:'查看成就页', p:0, t:1, exp:10 },
+    ];
+    const dq = document.getElementById('dashQuests');
+    QUESTS.forEach(q=>{
+      const pct = Math.round(q.p/q.t*100);
+      dq.insertAdjacentHTML('beforeend', `
+        <div class="qc ${q.done?'qc--done':''}">
+          <div class="qc__name">${q.done?'✓':'○'} ${q.name}</div>
+          <div class="qc__desc">${q.desc}</div>
+          <div class="bar ${q.done?'bar--exp':''}" style="height:10px"><div class="bar__fill" style="width:${pct}%;background-color:${q.done?'var(--gold)':'var(--accent)'}"></div></div>
+          <div class="qc__foot"><span>${q.p}/${q.t}</span><span class="${q.done?'t-gold':''}">${q.done?'✓ 已完成':'+'+q.exp+' EXP'}</span></div>
+        </div>`);
+    });
+
+    // —— 成就瓦片 ——
+    const ACH = ['⚔️','🛡️','💎','🎯','🏆','🌟','🔥','❄️','📦','💰','📖','🗝️','⭐','🔮','🎵','🧭','⚒️','🪄','🐉','👑','🛠️','⚗️','📜','🎲','🎀','🪶','🦅','🐺','🐉','🌊','⛰️','🌌'];
+    const da = document.getElementById('dashAch');
+    ACH.forEach((a,i)=> da.insertAdjacentHTML('beforeend', `<div class="ach ${i<12?'ach--unlocked':'ach--locked'}" title="${i<12?'已解锁 · '+(a):'未解锁'}">${i<12?a:'?'}</div>`));
+
+    // —— 冒险日志 ——
+    const JR = [
+      ['◆','冒险者 Krian 登录了游戏','系统事件','刚刚','#4A90E2'],
+      ['★','解锁成就：收集达人','成就解锁','12 分钟前','#FFD700'],
+      ['▶','登记了新物品「机械键盘」','物品事件','1 小时前','#3FAE6B'],
+      ['▣','完成每日任务「查看统计」','任务进度','3 小时前','#6BB5FF'],
+      ['◆','冒险者 Krian 升级到 Lv.12','系统事件','昨天','#FFD700'],
+      ['▶','退役了物品「旧耳机」','物品事件','2 天前','#6B7A92'],
+    ];
+    const jl = document.getElementById('journalList');
+    JR.forEach(j=>{
+      jl.insertAdjacentHTML('beforeend', `
+        <div class="journal-row" onclick="notify('展开日志：${j[1]}')">
+          <div class="jr__icon" style="color:${j[4]}">${j[0]}</div>
+          <div class="jr__body">
+            <div class="jr__title">${j[1]}</div>
+            <div class="jr__meta">${j[2]} · ${j[3]}</div>
+          </div>
+        </div>`);
+    });
+
+    // —— 最近获取 ——
+    const RECENT = [
+      ['机械键盘',1.2,'s-active'],['保温杯',0.4,'s-active'],['降噪耳机',3.5,'s-idle'],
+      ['显示器支架',0.2,'s-active'],['充电宝',0.1,'s-retired'],
+    ];
+    const rl = document.getElementById('recentList');
+    RECENT.forEach((r,i)=>{
+      rl.insertAdjacentHTML('beforeend', `
+        <div class="li-row" onclick="openItem(${i})">
+          <span class="dot ${r[2]}"></span>
+          <span class="li-row__name">${r[0]}</span>
+          <span class="li-row__meta">${r[1]}/天</span>
+        </div>`);
+    });
+
+    // —— 保修提醒 ——
+    const WAR = [
+      ['降噪耳机',3,899,'urgent'],['显示器支架',12,159,''],['机械键盘',25,699,''],
+    ];
+    const wl = document.getElementById('warrantyList');
+    WAR.forEach(w=>{
+      wl.insertAdjacentHTML('beforeend', `
+        <div class="li-row" onclick="notify('${w[0]} · ¥${w[2]}')">
+          <span class="dot ${w[3]==='urgent'?'s-discarded':'s-idle'}"></span>
+          <span class="li-row__name">${w[0]}</span>
+          <span class="li-row__meta ${w[3]}">${w[1]}天</span>
+        </div>`);
+    });
+
+    // —— 物品快览模态 ——
+    const ITEM_DB = [
+      ['⌨️','机械键盘','使用中',1.2],['☕','保温杯','使用中',0.4],['🎧','降噪耳机','闲置',3.5],
+      ['🖥️','显示器支架','使用中',0.2],['🔋','充电宝','退役',0.1],
+    ];
+    function openItem(i){
+      const it = ITEM_DB[i];
+      const stMap = {'使用中':'s-active','闲置':'s-idle','退役':'s-retired'};
+      document.getElementById('itemModalBody').innerHTML = `
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;margin-bottom:12px">
+          <div style="width:80px;height:80px;display:grid;place-items:center;font-size:42px;background:var(--bg-slot);border:3px solid var(--line-grey);box-shadow:inset 2px 2px 0 #0008">${it[0]}</div>
+          <div>
+            <div class="char-name">${it[1]}</div>
+            <span class="badge ${stMap[it[2]]}" style="margin-top:6px">${it[2]}</span>
+          </div>
+        </div>
+        <div class="cost-hero" style="margin-bottom:12px">
+          <div class="cost-hero__label">日均成本</div>
+          <div class="cost-hero__value">${it[3]} 💰/天</div>
+        </div>
+        <div class="info-grid">
+          <span class="info-grid__k">购买价格</span><span class="info-grid__v hi">¥699</span>
+          <span class="info-grid__k">使用天数</span><span class="info-grid__v">582 天</span>
+          <span class="info-grid__k">总投入</span><span class="info-grid__v">¥715</span>
+        </div>
+        <a class="btn btn--primary btn--block" href="item-detail.html" style="margin-top:12px">✎ 查看详情</a>`;
+      openModal('itemModal');
+    }
+  </script>
+</body>
+</html>
