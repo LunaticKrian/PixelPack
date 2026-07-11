@@ -7,7 +7,7 @@
 // 原型页面清单（开发导航，非产品 UI）
 const PAGES = [
   { id: 'index',           href: 'index.html',           label: '角色信息 · Dashboard', gly: '◈' },
-  { id: 'world-map',       href: '../world-map/world-map.html', label: '世界地图 · Intel',   gly: '❖' },
+  { id: 'world-map',       href: '../260711-world-map/260711-world-map.html', label: '世界地图 · Intel',   gly: '❖' },
   { id: 'items',           href: 'items.html',           label: '背包 · ItemList',      gly: '◆' },
   { id: 'item-detail',     href: 'item-detail.html',     label: '物品详情 · ItemDetail', gly: '▶' },
   { id: 'quests',          href: 'quests.html',          label: '任务系统 · Quests',     gly: '▣' },
@@ -25,7 +25,7 @@ const CRUMB = {
   quests: '/quests', stats: '/stats', blog: '/blog',
   categories: '/categories', settings: '/settings',
   login: '/login', register: '/register', 'character-create': '/character/create',
-  'world-map': '/world-map',
+  'world-map': '/260711-world-map',
 };
 
 const PAGE_LABEL = {
@@ -61,7 +61,7 @@ function renderShell() {
     <a class="hud-nav__item ${page === 'index' ? 'is-active' : ''}" href="index.html">◈ 角色信息</a>
   `));
   nav.appendChild(el(`
-    <a class="hud-nav__item ${page === 'world-map' ? 'is-active' : ''}" href="../world-map/world-map.html">❖ 世界地图</a>
+    <a class="hud-nav__item ${page === '260711-world-map' ? 'is-active' : ''}" href="../world-map/world-map.html">❖ 世界地图</a>
   `));
   $top.appendChild(nav);
 

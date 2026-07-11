@@ -23,8 +23,8 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/world-map',
-      name: 'world-map',
+      path: '/260711-world-map',
+      name: '260711-world-map',
       component: () => import('../views/WorldMap.vue'),
       meta: { requiresAuth: true },
     },

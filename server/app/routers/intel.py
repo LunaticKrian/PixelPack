@@ -28,12 +28,11 @@ async def get_today_intel(
 async def get_archive_intel(
     region: str | None = None,
     page: int = 1,
-    page_size: int = 20,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ArchivePageResponse:
-    """历史归档（航海日志），分页，可选按疆域筛选。"""
-    return await list_archive(db, region=region, page=page, page_size=page_size)
+    """历史归档（航海日志），一天一页，可选按疆域筛选。"""
+    return await list_archive(db, region=region, page=page)
 
 
 @router.get("/stats", response_model=IntelStatsResponse)

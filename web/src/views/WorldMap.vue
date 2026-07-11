@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useNotifyStore } from '../stores/notification'
-import { listTodayIntel, listArchive, getIntelStats } from '../api/intel'
+import PixelDatePicker from '../components/PixelDatePicker.vue'
+import { listTodayIntel, listArchive, getIntelStats, generateIntel } from '../api/intel'
 import { REGIONS, type Article, type RegionSlug, type RegionDef, type IntelStats } from '../types/intel'
 
 const notify = useNotifyStore()
@@ -11,13 +12,24 @@ const todayIntel = ref<Article[]>([])
 const archive = ref<Article[]>([])
 const currentPage = ref(1)
 const totalPages = ref(1)
-const archiveTotal = ref(0)
-const PAGE_SIZE = 20
+const archiveDates = ref<string[]>([])
+const currentDate = ref<string | null>(null)
 const stats = ref<IntelStats | null>(null)
 const loadingIntel = ref(true)
-const loadingArchive = ref(true)
+const loadingArchive = ref(true) // 仅首次挂载：整块替换为 spinner
+const navLoading = ref(false)    // 翻页 / 切疆域 / 跳日期：保留旧内容，叠加蒙层，避免抖动
+const animateArchive = ref(true) // stagger 入场动画只在首次加载播一次，翻页不再重播（消除闪烁）
 const activeRegion = ref<RegionSlug | null>(null)
 const selected = ref<Article | null>(null)
+
+// ── 侦测控制台 state ──
+const scanning = ref(false)
+const scanStatus = ref('')
+const scanClock = ref('0:00')
+const scanError = ref('')
+const scanDoneText = ref('')
+let scanTimer: number | undefined
+let scanStatusTimer: number | undefined
 
 const todayStr = new Date().toISOString().slice(0, 10)
 
@@ -30,21 +42,22 @@ const unreadByRegion = computed(() => {
   return m
 })
 
-// ── 按月分组（当前页） ──
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-const groupedArchive = computed(() => {
-  const groups: Record<string, Article[]> = {}
-  archive.value.forEach((a) => {
-    const key = a.publishedAt.slice(0, 7)
-    ;(groups[key] ||= []).push(a)
-  })
-  return Object.entries(groups).sort(([a], [b]) => (a < b ? 1 : -1))
-})
 
-function monthLabel(key: string): string {
-  const [y, m] = key.split('-')
-  return `${y} · ${MONTHS[+m - 1]}`
-}
+// 当前页（一天）标题，如 "2026 · JUL 10"
+const dayLabel = computed(() => {
+  const iso = currentDate.value
+  if (!iso) return '—'
+  const [y, m, d] = iso.split('-')
+  return `${y} · ${MONTHS[+m - 1]} ${+d}`
+})
+// 相邻日期短标签（MM-DD），供翻页器标注目标日
+const prevDateShort = computed(() =>
+  currentPage.value > 1 ? (archiveDates.value[currentPage.value - 2] || '').slice(5) : '',
+)
+const nextDateShort = computed(() =>
+  currentPage.value < totalPages.value ? (archiveDates.value[currentPage.value] || '').slice(5) : '',
+)
 function dayOf(iso: string): number {
   return +iso.slice(8, 10)
 }
@@ -55,34 +68,106 @@ const activeRegionDef = computed(() =>
   activeRegion.value ? REGIONS.find((r) => r.slug === activeRegion.value) ?? null : null,
 )
 
-// ── 航海日志：加载 / 翻页 / 疆域筛选 ──
-async function loadArchive() {
-  loadingArchive.value = true
+// ── 航海日志：加载 / 翻页 / 疆域筛选 / 跳日期（一天一页） ──
+// navigation=true：保留旧内容 + 叠加蒙层（翻页/切筛选用，避免抖动）
+async function loadArchive(navigation = false) {
+  if (navigation) navLoading.value = true
+  else loadingArchive.value = true
   try {
-    const res = await listArchive(activeRegion.value, currentPage.value, PAGE_SIZE)
+    const res = await listArchive(activeRegion.value, currentPage.value)
     archive.value = res.items
     totalPages.value = res.totalPages
-    archiveTotal.value = res.total
+    archiveDates.value = res.dates
+    currentDate.value = res.date
+    if (currentPage.value > res.totalPages && res.totalPages > 0) {
+      currentPage.value = res.totalPages
+    }
   } catch {
     notify.error('加载航海日志失败')
   } finally {
     loadingArchive.value = false
+    navLoading.value = false
+    // 首次加载播完 stagger 后关闭，之后翻页不再重播
+    if (animateArchive.value) {
+      window.setTimeout(() => { animateArchive.value = false }, 500)
+    }
   }
 }
 function selectRegion(slug: RegionSlug | null) {
   activeRegion.value = slug
-  currentPage.value = 1 // 切疆域回到第 1 页
-  void loadArchive()
+  currentPage.value = 1 // 切疆域回到第 1 页（最新一天）
+  void loadArchive(true)
 }
 function prevPage() {
-  if (currentPage.value <= 1) return
+  if (currentPage.value <= 1 || navLoading.value) return
   currentPage.value--
-  void loadArchive()
+  void loadArchive(true)
 }
 function nextPage() {
-  if (currentPage.value >= totalPages.value) return
+  if (currentPage.value >= totalPages.value || navLoading.value) return
   currentPage.value++
-  void loadArchive()
+  void loadArchive(true)
+}
+// 选择日期直接跳到那一天（日历 restrict-to-marked，只给可选的真实日期）
+function jumpToDate(iso: string | null) {
+  if (!iso || iso === currentDate.value || navLoading.value) return
+  const idx = archiveDates.value.indexOf(iso)
+  if (idx >= 0) {
+    currentPage.value = idx + 1
+    void loadArchive(true)
+  }
+}
+
+// ── 信号台刷新（侦测成功后复用） ──
+async function refreshToday() {
+  try {
+    todayIntel.value = await listTodayIntel()
+  } catch {
+    /* 静默：不打断侦测成功反馈 */
+  }
+}
+async function refreshStats() {
+  try {
+    stats.value = await getIntelStats()
+  } catch {
+    /* 静默 */
+  }
+}
+
+// ── 侦测控制台：主动发起检索 ──
+const SCAN_STATUSES = ['调频接收中…', '解析疆域信号…', '归类情报卡…', '归档入库…']
+async function triggerScan() {
+  if (scanning.value) return
+  scanning.value = true
+  scanError.value = ''
+  scanDoneText.value = ''
+  scanStatus.value = SCAN_STATUSES[0]
+  let elapsed = 0
+  let si = 0
+  scanClock.value = '0:00'
+  scanTimer = window.setInterval(() => {
+    elapsed += 1
+    scanClock.value = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`
+  }, 1000)
+  scanStatusTimer = window.setInterval(() => {
+    si = (si + 1) % SCAN_STATUSES.length
+    scanStatus.value = SCAN_STATUSES[si]
+  }, 4500)
+  try {
+    const res = await generateIntel(true)
+    scanDoneText.value = `✓ 侦测完成 · 新增 ${res.count} 条情报`
+    notify.success(`侦测完成 · 新增 ${res.count} 条情报`)
+    void Promise.all([refreshToday(), refreshStats()])
+  } catch (e: unknown) {
+    const err = e as { data?: { detail?: string }; message?: string }
+    const msg = err?.data?.detail || err?.message || '未知错误'
+    scanError.value = `✕ 侦测失败 · ${msg}`
+    notify.error('侦测失败，稍后再试')
+  } finally {
+    if (scanTimer !== undefined) window.clearInterval(scanTimer)
+    if (scanStatusTimer !== undefined) window.clearInterval(scanStatusTimer)
+    scanning.value = false
+  }
 }
 
 // ── 阅读模态 ──
@@ -147,11 +232,7 @@ function stopTicker() {
 onMounted(() => {
   document.addEventListener('keydown', onKeydown)
   startTicker()
-  void Promise.all([listTodayIntel(), getIntelStats()])
-    .then(([t, s]) => {
-      todayIntel.value = t
-      stats.value = s
-    })
+  void Promise.all([refreshToday(), refreshStats()])
     .catch(() => notify.error('加载今日情报失败'))
     .finally(() => {
       loadingIntel.value = false
@@ -162,6 +243,8 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown)
   stopTicker()
+  if (scanTimer !== undefined) window.clearInterval(scanTimer)
+  if (scanStatusTimer !== undefined) window.clearInterval(scanStatusTimer)
 })
 </script>
 
@@ -251,6 +334,27 @@ onUnmounted(() => {
           </article>
         </div>
       </div>
+
+      <!-- 侦测控制台 · 主动发起检索 -->
+      <div class="sig-console">
+        <div class="radar" :class="{ 'is-sweeping': scanning }" aria-hidden="true">
+          <span class="radar-ring r1"></span>
+          <span class="radar-ring r2"></span>
+          <span class="radar-core"></span>
+          <span class="radar-sweep"></span>
+        </div>
+        <button class="scan-btn" :disabled="scanning" @click="triggerScan">
+          <span class="scan-ico">{{ scanning ? '◉' : '⚡' }}</span>
+          {{ scanning ? '侦测中…' : '发起侦测' }}
+        </button>
+        <div class="scan-status">
+          <span v-if="scanning" class="scan-busy">
+            {{ scanStatus }} <b class="scan-time">{{ scanClock }}</b>
+          </span>
+          <span v-else-if="scanError" class="scan-err">{{ scanError }}</span>
+          <span v-else class="scan-idle">{{ scanDoneText || '侦测就绪 · 可手动发起一次情报侦测' }}</span>
+        </div>
+      </div>
     </section>
 
     <!-- ════ ACT 2 · 航海日志 / 历史查看 ════ -->
@@ -259,8 +363,8 @@ onUnmounted(() => {
         <span class="voyage-name">▤ 航海日志 · ARCHIVE</span>
         <span class="voyage-meta">{{
           activeRegionDef
-            ? `${activeRegionDef.name} · 共 ${archiveTotal} 段`
-            : `共 ${archiveTotal} 段记录`
+            ? `${activeRegionDef.name} · 共 ${totalPages} 天`
+            : `共 ${totalPages} 天记录`
         }}</span>
       </div>
 
@@ -289,19 +393,14 @@ onUnmounted(() => {
           <p class="loading-text">翻开航海日志...</p>
         </div>
 
-        <div v-else-if="!archive.length" class="empty-state">
-          <div class="empty-gly">◇</div>
-          该疆域暂无历史记录<br />等待新的信号抵达
-        </div>
-
-        <div v-else>
-          <div v-for="[key, list] in groupedArchive" :key="key" class="month-group">
-            <div class="month-head">
-              ▣ {{ monthLabel(key) }} <span class="month-count">{{ list.length }} 篇</span>
+        <div v-else class="archive-wrap">
+          <template v-if="archive.length">
+            <div class="day-head">
+              ▣ {{ dayLabel }} <span class="day-count">{{ archive.length }} 篇</span>
             </div>
-            <div class="archive-grid stagger-list">
+            <div class="archive-grid" :class="{ 'stagger-list': animateArchive }">
               <article
-                v-for="a in list"
+                v-for="a in archive"
                 :key="a.id"
                 class="log-card pixel-card-hover"
                 :style="{ '--reg-c': regionOf(a).color }"
@@ -321,14 +420,32 @@ onUnmounted(() => {
                 </div>
               </article>
             </div>
+          </template>
+          <!-- 翻页/切筛选用蒙层：保留旧内容高度，消除抖动 -->
+          <div v-if="navLoading" class="nav-overlay">
+            <div class="pixel-loading"></div>
           </div>
         </div>
       </div>
 
       <div class="pager">
-        <button class="pager-btn" :disabled="currentPage <= 1" @click="prevPage">◀ 上一页</button>
-        <span>第 <b class="t-gold">{{ currentPage }}</b> / {{ totalPages || 1 }} 页</span>
-        <button class="pager-btn" :disabled="currentPage >= totalPages" @click="nextPage">下一页 ▶</button>
+        <button class="pager-btn" :disabled="currentPage <= 1 || navLoading" @click="prevPage">
+          ◀ {{ prevDateShort || '最新' }}
+        </button>
+        <span>第 <b class="t-gold">{{ currentPage }}</b> / {{ totalPages || 1 }} 天</span>
+        <button class="pager-btn" :disabled="currentPage >= totalPages || navLoading" @click="nextPage">
+          {{ nextDateShort || '更早' }} ▶
+        </button>
+        <PixelDatePicker
+          class="pager-date"
+          :model-value="currentDate || todayStr"
+          :marked-dates="archiveDates"
+          :restrict-to-marked="archiveDates.length > 0"
+          :drop-up="true"
+          :width="'132px'"
+          placeholder="引用日期"
+          @update:model-value="jumpToDate"
+        />
       </div>
     </section>
 
@@ -766,46 +883,27 @@ onUnmounted(() => {
 }
 
 .voyage-body { padding: 14px; }
-.empty-state {
-  padding: 40px 16px;
-  text-align: center;
-  font-family: var(--font-pixel), 'Ark Pixel', monospace;
-  font-size: 11px;
-  color: var(--pixel-text-secondary);
-  line-height: 1.9;
-}
-.empty-gly {
-  font-size: 26px;
-  color: var(--pixel-border);
-  margin-bottom: 10px;
-}
-
-.month-group { margin-bottom: 20px; }
-.month-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  font-family: 'Press Start 2P', var(--font-pixel), monospace;
-  font-size: 9px;
-  color: var(--pixel-warning);
-  letter-spacing: 1px;
-}
-.month-head::after {
-  content: '';
-  flex: 1;
-  height: 2px;
-  background: repeating-linear-gradient(90deg, var(--pixel-border) 0 6px, transparent 6px 10px);
-}
-.month-count {
-  color: var(--wm-faint);
-  font-size: 8px;
-}
 
 .archive-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+/* 翻页/切筛选时保留旧内容 + 蒙层，避免高度塌陷造成抖动 */
+.archive-wrap {
+  position: relative;
+  min-height: 180px;
+}
+.nav-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--pixel-bg) 72%, transparent);
+  backdrop-filter: blur(1px);
+  z-index: 4;
 }
 
 /* 历史条目卡 */
@@ -918,6 +1016,149 @@ onUnmounted(() => {
   border-color: var(--pixel-border);
 }
 
+/* 日期跳转（复用 PixelDatePicker，与翻页按钮等高对齐，向上展开） */
+.pager-date {
+  margin-left: 4px;
+}
+.pager-date :deep(.px-date-trigger) {
+  padding: 3px 8px;
+  border-width: 2px;
+  font-size: 11px;
+  justify-content: center;
+}
+.pager-date :deep(.px-date-icon) {
+  font-size: 11px;
+}
+
+/* ════ 侦测控制台 · 主动发起检索 ════ */
+.sig-console {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-top: 2px solid var(--pixel-border);
+  background: var(--pixel-bg-secondary);
+}
+.radar {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  border: 2px solid var(--pixel-border);
+  background: var(--wm-inset);
+  border-radius: 50%;
+  overflow: hidden;
+}
+.radar-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  background: var(--pixel-success);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.radar-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid var(--wm-line-dim);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.radar-ring.r1 { width: 26px; height: 26px; }
+.radar-ring.r2 { width: 40px; height: 40px; }
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 300deg,
+    color-mix(in srgb, var(--pixel-primary) 45%, transparent) 360deg
+  );
+  opacity: 0;
+}
+.radar.is-sweeping .radar-sweep {
+  opacity: 1;
+  animation: radar-rot 1.6s linear infinite;
+}
+.radar.is-sweeping .radar-core {
+  animation: radar-ping 1.6s ease-out infinite;
+}
+@keyframes radar-rot {
+  to { transform: rotate(360deg); }
+}
+@keyframes radar-ping {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pixel-primary) 50%, transparent); }
+  100% { box-shadow: 0 0 0 13px transparent; }
+}
+.scan-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  color: var(--pixel-bg);
+  background: var(--pixel-primary);
+  border: 2px solid var(--pixel-text);
+  box-shadow: 3px 3px 0 var(--pixel-shadow);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  flex-shrink: 0;
+}
+.scan-btn:hover:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--pixel-shadow);
+}
+.scan-btn:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--pixel-shadow);
+}
+.scan-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+  background: var(--pixel-text-secondary);
+  box-shadow: none;
+}
+.scan-ico { font-size: 14px; }
+.scan-status {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-pixel), 'Ark Pixel', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.scan-idle { color: var(--pixel-text-secondary); }
+.scan-busy { color: var(--pixel-primary); }
+.scan-busy .scan-time {
+  margin-left: 6px;
+  font-family: var(--font-pixel-num), 'VT323', monospace;
+  color: var(--pixel-warning);
+}
+.scan-err { color: var(--pixel-accent); }
+
+/* 单日头 */
+.day-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-family: 'Press Start 2P', var(--font-pixel), monospace;
+  font-size: 9px;
+  color: var(--pixel-warning);
+  letter-spacing: 1px;
+}
+.day-head::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--pixel-border) 0 6px, transparent 6px 10px);
+}
+.day-count { color: var(--wm-faint); font-size: 8px; }
+
 /* ════ 阅读模态 ════ */
 .reader-overlay {
   position: fixed;
@@ -1026,5 +1267,13 @@ onUnmounted(() => {
   .archive-grid { grid-template-columns: 1fr; }
   .voyage-meta { width: 100%; margin-left: 0; }
   .reader-modal { max-width: 100%; }
+}
+@media (max-width: 768px) {
+  .sig-console { flex-wrap: wrap; }
+  .scan-status { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar.is-sweeping .radar-sweep,
+  .radar.is-sweeping .radar-core { animation: none; }
 }
 </style>

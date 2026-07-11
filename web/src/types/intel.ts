@@ -41,11 +41,18 @@ export interface IntelStats {
   unreadCount: number // 待读（视觉效果，= 今日未读）
 }
 
-/** 航海日志分页响应 */
+/** 航海日志分页响应（一天一页） */
 export interface ArchivePage {
   items: Article[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
+  date: string | null // 当前页日期 ISO (YYYY-MM-DD)
+  page: number // 第几页（= 第几天，1 起）
+  totalPages: number // 总天数
+  total: number // 当前页条数（= items.length）
+  dates: string[] // 所有日期 ISO DESC，供前端标注 前一天/后一天
+}
+
+/** 侦测（主动发起检索）结果 */
+export interface GenerateResult {
+  status: string
+  count: number
 }

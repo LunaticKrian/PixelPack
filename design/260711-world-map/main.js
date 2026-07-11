@@ -30,7 +30,7 @@ function renderShell() {
     <a class="hud-nav__item ${page === 'index' ? 'is-active' : ''}" href="../v3.0/index.html">◈ 角色信息</a>
   `));
   nav.appendChild(el(`
-    <a class="hud-nav__item ${page === 'world-map' ? 'is-active' : ''}" href="world-map.html">❖ 世界地图</a>
+    <a class="hud-nav__item ${page === '260711-world-map' ? 'is-active' : ''}" href="world-map.html">❖ 世界地图</a>
   `));
   $top.appendChild(nav);
 

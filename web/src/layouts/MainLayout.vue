@@ -7,7 +7,7 @@ const auth = useAuthStore()
 
 const navItems = [
   { path: '/', label: '角色信息', icon: '◈' },
-  { path: '/world-map', label: '世界地图', icon: '❖' },
+  { path: '/260711-world-map', label: '世界地图', icon: '❖' },
 ]
 
 // Starfield for the CRT background. Positions are fixed once at setup so the

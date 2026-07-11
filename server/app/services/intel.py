@@ -51,40 +51,48 @@ async def list_archive(
     db: AsyncSession,
     region: str | None = None,
     page: int = 1,
-    page_size: int = 20,
 ) -> ArchivePageResponse:
-    """历史归档（航海日志），分页 + 可选疆域筛选。按 published_at desc。
+    """历史归档（航海日志）—— **一天一页**。
 
-    page 从 1 起；page_size 夹在 [1, 100]；page 超出总页数时夹到最后一页。
+    page = 第几个有内容的日期（1 起，DESC）。每页返回该日期下的全部文章。
+    region 过滤时只统计有匹配文章的日期，自动跳过空日期。
     """
     today = date.today()
     page = max(1, int(page))
-    page_size = max(1, min(int(page_size), 100))
 
     where_clauses = [IntelArticle.published_at < today]
     if region:
         where_clauses.append(IntelArticle.region == region)
 
-    total = (await db.scalar(
-        select(func.count()).select_from(IntelArticle).where(*where_clauses)
-    )) or 0
-    total_pages = max(1, (total + page_size - 1) // page_size)
-    page = min(page, total_pages)
-
-    stmt = (
-        select(IntelArticle)
+    # 所有有内容的日期（DESC）
+    date_rows = (await db.execute(
+        select(IntelArticle.published_at)
         .where(*where_clauses)
-        .order_by(IntelArticle.published_at.desc(), IntelArticle.id.desc())
-        .limit(page_size)
-        .offset((page - 1) * page_size)
-    )
-    rows = (await db.execute(stmt)).scalars().all()
+        .distinct()
+        .order_by(IntelArticle.published_at.desc())
+    )).scalars().all()
+    dates = [d.isoformat() for d in date_rows if d is not None]
+
+    total_pages = len(dates)
+    if total_pages == 0:
+        return ArchivePageResponse(
+            items=[], date=None, page=1, totalPages=0, total=0, dates=[],
+        )
+
+    page = min(page, total_pages)
+    target = date.fromisoformat(dates[page - 1])
+    rows = (await db.execute(
+        select(IntelArticle)
+        .where(*where_clauses, IntelArticle.published_at == target)
+        .order_by(IntelArticle.id.desc())
+    )).scalars().all()
     return ArchivePageResponse(
         items=[to_response(a) for a in rows],
-        total=total,
+        date=target.isoformat(),
         page=page,
-        pageSize=page_size,
         totalPages=total_pages,
+        total=len(rows),
+        dates=dates,
     )
 
 

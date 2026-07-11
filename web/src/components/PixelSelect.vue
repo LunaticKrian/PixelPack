@@ -11,9 +11,11 @@ const props = withDefaults(defineProps<{
   options: PixelOption[]
   placeholder?: string
   width?: string
+  hidePlaceholder?: boolean
 }>(), {
   placeholder: '请选择',
   width: 'auto',
+  hidePlaceholder: false,
 })
 
 const emit = defineEmits<{
@@ -72,6 +74,7 @@ onBeforeUnmount(() => {
     </div>
     <div v-if="open" ref="dropdownRef" class="px-select-dropdown">
       <div
+        v-if="!hidePlaceholder"
         class="px-select-option"
         :class="{ selected: modelValue === '' || modelValue === null || modelValue === undefined }"
         @click="select(options[0]?.value === undefined ? '' : null)"

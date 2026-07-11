@@ -41,9 +41,10 @@ class IntelStatsResponse(BaseModel):
 
 
 class ArchivePageResponse(BaseModel):
-    """航海日志分页响应。"""
+    """航海日志分页响应（一天一页）。"""
     items: list[ArticleResponse]
-    total: int
-    page: int
-    pageSize: int
-    totalPages: int
+    date: str | None  # 当前页日期 ISO (YYYY-MM-DD)，空结果时为 None
+    page: int  # 第几页（= 第几天，1 起）
+    totalPages: int  # 总天数
+    total: int  # 当前页条数（= len(items)）
+    dates: list[str]  # 所有日期 ISO DESC，供前端标注 前一天/后一天

@@ -5,9 +5,15 @@ const props = withDefaults(defineProps<{
   modelValue: string
   placeholder?: string
   width?: string
+  dropUp?: boolean
+  markedDates?: string[]
+  restrictToMarked?: boolean
 }>(), {
   placeholder: '选择日期',
   width: 'auto',
+  dropUp: false,
+  markedDates: () => [],
+  restrictToMarked: false,
 })
 
 const emit = defineEmits<{
@@ -16,6 +22,8 @@ const emit = defineEmits<{
 
 const open = ref(false)
 const panelRef = ref<HTMLElement | null>(null)
+
+const markedSet = computed(() => new Set(props.markedDates))
 
 const weekDays = ['日', '一', '二', '三', '四', '五', '六']
 const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
@@ -33,25 +41,32 @@ const calendarDays = computed(() => {
   const daysInMonth = new Date(y, m + 1, 0).getDate()
   const prevDays = new Date(y, m, 0).getDate()
 
-  const days: { date: string; day: number; inMonth: boolean; isToday: boolean; selected: boolean }[] = []
+  const days: { date: string; day: number; inMonth: boolean; isToday: boolean; selected: boolean; marked: boolean; disabled: boolean }[] = []
+
+  const mark = (ds: string) => ({
+    marked: markedSet.value.has(ds),
+    disabled: props.restrictToMarked && !markedSet.value.has(ds),
+  })
 
   for (let i = firstDay - 1; i >= 0; i--) {
     const d = prevDays - i
     const pm = m === 0 ? 11 : m - 1
     const py = m === 0 ? y - 1 : y
-    days.push({ date: fmt(py, pm, d), day: d, inMonth: false, isToday: false, selected: false })
+    const ds = fmt(py, pm, d)
+    days.push({ date: ds, day: d, inMonth: false, isToday: false, selected: false, ...mark(ds) })
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
     const ds = fmt(y, m, d)
-    days.push({ date: ds, day: d, inMonth: true, isToday: ds === fmtToday(), selected: ds === props.modelValue })
+    days.push({ date: ds, day: d, inMonth: true, isToday: ds === fmtToday(), selected: ds === props.modelValue, ...mark(ds) })
   }
 
   const rem = 42 - days.length
   for (let d = 1; d <= rem; d++) {
     const nm = m === 11 ? 0 : m + 1
     const ny = m === 11 ? y + 1 : y
-    days.push({ date: fmt(ny, nm, d), day: d, inMonth: false, isToday: false, selected: false })
+    const ds = fmt(ny, nm, d)
+    days.push({ date: ds, day: d, inMonth: false, isToday: false, selected: false, ...mark(ds) })
   }
 
   return days
@@ -90,6 +105,7 @@ function toggle(e: MouseEvent) {
 }
 
 function selectDate(date: string) {
+  if (props.restrictToMarked && !markedSet.value.has(date)) return
   emit('update:modelValue', date)
   open.value = false
 }
@@ -150,7 +166,7 @@ watch(() => props.modelValue, (v) => {
 </script>
 
 <template>
-  <div class="px-datepicker" :style="{ width }">
+  <div class="px-datepicker" :class="{ 'drop-up': dropUp }" :style="{ width }">
     <div class="px-date-trigger" :class="{ active: open }" @click="toggle">
       <span class="px-date-text" :class="{ placeholder: !modelValue }">
         {{ displayText || placeholder }}
@@ -181,7 +197,7 @@ watch(() => props.modelValue, (v) => {
             v-for="(d, i) in calendarDays"
             :key="i"
             class="px-day"
-            :class="{ outside: !d.inMonth, today: d.isToday, selected: d.selected }"
+            :class="{ outside: !d.inMonth, today: d.isToday, selected: d.selected, marked: d.marked, disabled: d.disabled }"
             @click="selectDate(d.date)"
           >{{ d.day }}</div>
         </div>
@@ -281,6 +297,15 @@ watch(() => props.modelValue, (v) => {
   pointer-events: auto;
 }
 
+/* 向上展开（用于底部工具条） */
+.px-datepicker.drop-up .px-date-panel {
+  top: auto;
+  bottom: 100%;
+  border-top: 3px solid var(--pixel-primary);
+  border-bottom: none;
+  box-shadow: -4px -4px 0 var(--pixel-shadow);
+}
+
 /* Navigation */
 .px-date-nav {
   display: flex;
@@ -357,6 +382,23 @@ watch(() => props.modelValue, (v) => {
 .px-day.today { border: 2px solid var(--pixel-primary); font-weight: 700; }
 .px-day.selected { background: var(--pixel-primary); color: var(--pixel-bg); border-color: var(--pixel-primary); }
 .px-day.selected:hover { background: var(--pixel-primary); color: var(--pixel-bg); }
+
+/* 有数据的日期：底部小圆点标记 */
+.px-day.marked { position: relative; font-weight: 700; }
+.px-day.marked::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--pixel-success);
+}
+.px-day.selected.marked::after { background: var(--pixel-bg); }
+.px-day.disabled { color: var(--pixel-text-secondary); opacity: 0.28; cursor: not-allowed; }
+.px-day.disabled:hover { background: none; border-color: transparent; opacity: 0.28; }
+.px-day.disabled.marked { opacity: 1; }
 
 /* Sub-selection grids (months & years) */
 .px-sub-grid {
