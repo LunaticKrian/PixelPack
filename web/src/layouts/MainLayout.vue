@@ -9,6 +9,15 @@ const navItems = [
   { path: '/', label: '角色信息', icon: '◈' },
 ]
 
+// Starfield for the CRT background. Positions are fixed once at setup so the
+// stars don't reshuffle on every route change.
+const stars = Array.from({ length: 40 }, () => ({
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  delay: `${Math.random() * 3}s`,
+  duration: `${1.5 + Math.random() * 2}s`,
+}))
+
 function handleLogout() {
   auth.logout()
   router.push('/login')
@@ -16,9 +25,22 @@ function handleLogout() {
 </script>
 
 <template>
-  <div class="app-shell">
-    <div class="scanlines"></div>
-
+  <div class="app-shell pixel-vignette">
+    <!-- CRT background: scanlines + starfield -->
+    <div class="scanlines-crt"></div>
+    <div class="stars">
+      <span
+        v-for="(star, i) in stars"
+        :key="i"
+        class="star"
+        :style="{
+          left: star.left,
+          top: star.top,
+          animationDelay: star.delay,
+          animationDuration: star.duration,
+        }"
+      ></span>
+    </div>
     <!-- Top HUD Bar -->
     <header class="hud-bar">
       <div class="hud-left">
@@ -50,7 +72,7 @@ function handleLogout() {
     </header>
 
     <!-- Main Content -->
-    <main class="content-area pixel-grid-texture">
+    <main class="content-area">
       <slot />
     </main>
 
@@ -81,22 +103,38 @@ function handleLogout() {
   height: 100vh;
   overflow: hidden;
   position: relative;
+  background: var(--pixel-bg);
 }
 
-.scanlines {
-  position: fixed;
+/* ===== CRT Background: scanlines + starfield ===== */
+.scanlines-crt {
+  position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     0deg,
     transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.06) 2px,
-    rgba(0, 0, 0, 0.06) 4px
+    transparent 1px,
+    rgba(0, 0, 0, 0.12) 1px,
+    rgba(0, 0, 0, 0.12) 3px
   );
   pointer-events: none;
-  z-index: 100;
-  will-change: transform;
-  backface-visibility: hidden;
+  z-index: 10;
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--pixel-text);
+  animation: pixel-blink 2s step-end infinite;
+  opacity: 0.4;
 }
 
 /* ===== Top HUD Bar ===== */
@@ -236,6 +274,8 @@ function handleLogout() {
   flex: 1;
   overflow-y: auto;
   padding: 24px;
+  position: relative;
+  z-index: 2;
 }
 
 /* ===== Bottom Status Bar ===== */

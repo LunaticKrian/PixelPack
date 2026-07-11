@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>世界地图 · PixelPack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="world-map" data-layout="main">
+  <div class="ambient" aria-hidden="true"><div class="ambient__grid"></div><div class="ambient__dust"></div></div>
+
+  <div class="app">
+    <header class="hud-top" id="hud-top"></header>
+
+    <main class="content">
+
+      <!-- 工具栏 -->
+      <div class="toolbar">
+        <a class="btn btn--sm btn--ghost" href="../v3.0/index.html">◀ 角色信息</a>
+        <div class="toolbar__title">❖ 世界地图</div>
+        <span class="t-faint t-pixel" style="font-size:8px;margin-left:auto">DAILY INTEL · 2026-07-11</span>
+      </div>
+
+      <!-- ═══════════ ACT 1 · 信号台 / 每日推送 ═══════════ -->
+      <section class="panel panel--lift signal" style="margin-bottom:16px">
+        <div class="sig-head">
+          <span class="sig-live"><span class="sig-live__dot"></span>ON AIR</span>
+          <span class="sig-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span class="t-pixel" style="font-size:9px;color:var(--text)">◉ 信号台</span>
+          <span class="sig-date">2026-07-11 · 07:00</span>
+        </div>
+
+        <div class="sig-ticker">
+          <span class="sig-ticker__prompt">&gt; BROADCAST_</span>
+          <span class="sig-ticker__txt" id="ticker" data-typewriter='["来自 6 个疆域的 4 条新情报已抵达信号台。","大模型疆域：Opus 4.8 百万上下文实测已就绪。","智能体疆域：Agent 记忆架构专题更新。","点击地图上的金色信标，调频至对应疆域。"]'></span><span class="sig-ticker__caret"></span>
+        </div>
+
+        <div class="sig-stats">
+          <div class="stat-card"><div class="stat-card__label">今日推送</div><div class="stat-card__value hi">4</div></div>
+          <div class="stat-card"><div class="stat-card__label">本周累计</div><div class="stat-card__value">18</div></div>
+          <div class="stat-card"><div class="stat-card__label">已归档</div><div class="stat-card__value">142</div></div>
+          <div class="stat-card"><div class="stat-card__label">待读</div><div class="stat-card__value hi">3</div></div>
+        </div>
+
+        <div class="sig-body">
+          <div class="sec-title" style="margin-bottom:12px"><span class="sec-title__gly">▶</span> 今日情报 <span class="t-faint t-pixel" style="font-size:8px;margin-left:auto">TODAY · INCOMING</span></div>
+          <div class="broadcast stagger" id="broadcast"></div>
+        </div>
+      </section>
+
+      <!-- ═══════════ ACT 2 · 像素世界地图（签名元素） ═══════════ -->
+      <section class="panel panel--lift" style="margin-bottom:16px">
+        <div class="wm-head">
+          <div class="wm-title">◈ 疆域图 · ATLAS</div>
+          <span class="wm-progress">已探索 <b>4</b> / 6 疆域 · <b>4</b> 处信标活跃</span>
+        </div>
+
+        <!-- 图例：颜色 → 疆域，可点击筛选 -->
+        <div class="legend" id="legend"></div>
+
+        <!-- 坐标网格 + 地图 -->
+        <div class="wm-chart">
+          <div class="wm-corner"></div>
+          <div class="wm-cols" id="wmCols"></div>
+          <div class="wm-rows" id="wmRows"></div>
+          <div class="wm-gridwrap">
+            <div class="wm-grid" id="wmGrid"></div>
+            <div class="compass" title="罗盘 · 指北">
+              <span class="compass__n">N</span>
+              <span class="compass__dia"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wm-foot">
+          <span>◉ 金色信标 = 该疆域今日有未读推送</span>
+          <span class="wm-foot__hint">点击大陆 / 图例项 → 调频至该疆域</span>
+        </div>
+      </section>
+
+      <!-- ═══════════ ACT 3 · 航海日志 / 历史查看 ═══════════ -->
+      <section class="panel">
+        <div class="voyage-head">
+          <div class="voyage-title">▤ 航海日志 · ARCHIVE</div>
+          <span class="voyage-meta" id="voyageMeta">共 10 段记录</span>
+          <div class="vfilters" id="vfilters"></div>
+        </div>
+        <div class="voyage-body" id="voyageBody"></div>
+        <div class="pager">
+          <a class="btn btn--sm btn--ghost" href="#" onclick="notify('已是最早一页')">◀ 更早</a>
+          <span>第 <span class="t-gold">1</span> / 3 页</span>
+          <a class="btn btn--sm btn--ghost" href="#" onclick="notify('加载更早的记录…')">更早 ▶</a>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="hud-bottom" id="hud-bottom"></footer>
+  </div>
+
+  <!-- ════ 阅读模态 ════ -->
+  <div class="modal" id="readModal">
+    <div class="modal__overlay"></div>
+    <div class="modal__box">
+      <div class="modal__head"><div class="modal__title" id="readTitle">▶ 情报</div><button class="modal__close" data-close>✕</button></div>
+      <div class="modal__body" id="readBody"></div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    /* ---------- 数据 ---------- */
+    // 0=海洋, 1..6=疆域。14 列 × 9 行。
+    const MAP = [
+      [0,0,0,0,1,1,1,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,1,1,0,0,2,2,0,0],
+      [0,0,0,1,1,1,0,0,0,2,2,2,2,0],
+      [0,3,3,0,0,0,0,0,0,2,2,0,0,0],
+      [3,3,3,3,0,4,4,0,0,0,0,5,5,0],
+      [3,3,0,0,0,4,4,4,0,0,5,5,5,5],
+      [0,0,0,0,0,4,4,0,0,0,5,5,0,0],
+      [0,0,6,6,6,0,0,0,0,0,0,0,0,0],
+      [0,0,6,6,0,0,0,0,0,0,0,0,0,0],
+    ];
+    // 疆域定义：质心放置标记（grid 坐标，1-indexed）
+    const REG = [
+      { id:1, code:'REG-01', name:'大模型', short:'LLM',     c:6,  r:2, col:'var(--accent-bright)', tint:'rgba(74,144,226,.22)',  line:'rgba(107,181,255,.5)', unread:1 },
+      { id:2, code:'REG-02', name:'智能体', short:'AGENT',    c:12, r:2, col:'var(--gold)',          tint:'rgba(255,215,0,.16)',   line:'rgba(255,215,0,.5)',  unread:1 },
+      { id:3, code:'REG-03', name:'视觉',   short:'VISION',   c:3,  r:4, col:'var(--info)',          tint:'rgba(107,181,255,.16)', line:'rgba(107,181,255,.4)',unread:0 },
+      { id:4, code:'REG-04', name:'基建',   short:'INFRA',    c:7,  r:5, col:'var(--ok)',            tint:'rgba(63,174,107,.2)',   line:'rgba(63,174,107,.5)', unread:1 },
+      { id:5, code:'REG-05', name:'研究',   short:'RESEARCH', c:12, r:5, col:'var(--epic)',          tint:'rgba(139,111,212,.2)',  line:'rgba(139,111,212,.5)',unread:1 },
+      { id:6, code:'REG-06', name:'工具',   short:'TOOLS',    c:3,  r:8, col:'var(--warn)',          tint:'rgba(224,136,86,.2)',   line:'rgba(224,136,86,.5)', unread:0 },
+    ];
+    const regById = id => REG.find(r => r.id === id);
+
+    // 今日推送（信号台）
+    const TODAY = [
+      { reg:1, unread:true,  src:'Anthropic',  time:'8 min', title:'Opus 4.8 百万上下文实测：长文档检索的衰减曲线',
+        sum:'在海量上下文窗口下重跑针-in-haystack，发现 600K token 后召回率出现明显塌方，附复现脚本。',
+        body:'我们用 128 组needle-in-haystack 与一组真实长合同 QA 压测了 Opus 4.8 的 1M 窗口。\n\n结论：前 600K token 召回稳定在 98% 以上；越过 600K 后，深度定位类问题的准确率以每 100K 约 6 个百分点的速度下滑。最脆弱的是「跨段聚合」类任务。\n\n建议：把超长文档做语义分块 + 检索增强，而不是整塞进上下文。复现脚本已开源。' },
+      { reg:2, unread:true,  src:'工程博客',   time:'12 min', title:'Agent 记忆架构演进：从向量检索到结构化状态机',
+        sum:'纯 RAG 记忆在多步任务里会丢状态。结构化状态机 + scratchpad 把长程任务的完成率拉高了 34%。',
+        body:'一个常见的 Agent 失效模式：跑了 20 步之后，它「忘了」第 3 步的约束——因为向量库里语义相近但时序无关的片段把它淹了。\n\n我们的做法是把记忆分成两层：\n· 事实层：向量检索，回答「是什么」。\n· 状态层：结构化 scratchpad（当前目标 / 已完成 / 待办 / 约束），每步强制读写。\n\n在 50 步以上的长程任务上，完成率从 51% 提到 85%。代价是每步多一次结构化写入。' },
+      { reg:4, unread:true,  src:'Infra Weekly', time:'6 min', title:'投机解码 × 2-bit 量化：推理成本再降 40%',
+        sum:'投机解码的拒绝机制天然消化了低比特量化的精度损失，两者叠加是当前最划算的推理组合。',
+        body:'单独上 2-bit 量化，模型质量塌方；单独上投机解码，吞吐翻倍但单 token 成本没变。\n\n组合起来：draft model 用 4-bit，target 用 2-bit，投机解码的「拒绝并重采样」天然修正了 2-bit 的偶发乱码。实测吞吐 ×2.3，单 token 成本再降 40%，质量在 MMLU 上仅掉 1.2 分。生产可用。' },
+      { reg:5, unread:true,  src:'arXiv 速读', time:'15 min', title:'VLA 模型 2026 综述：通用机器人的现状与瓶颈',
+        sum:'从 RT-2 到 π0.5，VLA 在仿真里突飞猛进，但 sim-to-real 的长尾仍是最大瓶颈。',
+        body:'视觉-语言-动作（VLA）模型这一年进展很快，但拆开看：\n· 强项：仿真环境内的泛化、语言指令跟随。\n· 弱项：真实世界长尾物体、可形变物体、接触丰富任务（拧螺丝、插拔）。\n\n瓶颈不在模型容量，而在真实交互数据的稀缺。几个团队在用「人类示教 + 仿真扩增」补这块，但 sim-to-real 的 gap 仍没有银弹。' },
+    ];
+
+    // 航海日志 / 历史
+    const LOGS = [
+      // 2026-07
+      { d:'2026-07-09', reg:1, src:'LongBench',   time:'5 min',  title:'LongBench-v3 评测解读：21 项长上下文任务的新基线' },
+      { d:'2026-07-06', reg:2, src:'工程博客',    time:'9 min',  title:'MCP 协议实战：把 12 个工具接进同一个 Agent' },
+      { d:'2026-07-03', reg:6, src:'CLI 周刊',    time:'4 min',  title:'开源 CLI 工具盘点：替代日常重复操作的 7 个选择' },
+      // 2026-06
+      { d:'2026-06-28', reg:3, src:'CV 简报',     time:'7 min',  title:'扩散模型实时推理：LCM 与一致性蒸馏的横向对比' },
+      { d:'2026-06-22', reg:1, src:'MoE 专题',    time:'11 min', title:'MoE 路由的可解释性：专家到底学会了什么' },
+      { d:'2026-06-15', reg:4, src:'Infra Weekly',time:'6 min',  title:'KV Cache 量化：FP8 在生产环境的落地清单' },
+      { d:'2026-06-08', reg:5, src:'arXiv 速读',  time:'14 min', title:'世界模型综述：从 Sora 到 Genie 2 的技术脉络' },
+      // 2026-05
+      { d:'2026-05-30', reg:2, src:'Agent Lab',   time:'10 min', title:'多 Agent 协作：辩论式架构真的能减少幻觉吗' },
+      { d:'2026-05-20', reg:3, src:'CV 简报',     time:'6 min',  title:'OCR 已死？用 VLM 端到端解析复杂版式文档的实测' },
+      { d:'2026-05-11', reg:6, src:'部署实战',    time:'8 min',  title:'本地模型部署：ollama 与 vLLM 的选型决策树' },
+    ];
+
+    const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+    /* ---------- 渲染：坐标刻度 ---------- */
+    const colsEl = document.getElementById('wmCols');
+    'ABCDEFGHIJKLMN'.split('').forEach(l => colsEl.appendChild(el(`<span>${l}</span>`)));
+    const rowsEl = document.getElementById('wmRows');
+    for (let i=1;i<=9;i++) rowsEl.appendChild(el(`<span>${i}</span>`));
+
+    /* ---------- 渲染：地图 tiles + 疆域标记 ---------- */
+    const grid = document.getElementById('wmGrid');
+    MAP.forEach((row, ri) => {
+      row.forEach((cell, ci) => {
+        if (cell === 0) { grid.appendChild(el(`<div class="wm-tile"></div>`)); return; }
+        const r = regById(cell);
+        const t = el(`<div class="wm-tile land" data-reg="${cell}" style="--land:${r.tint};--land-line:${r.line}"></div>`);
+        t.addEventListener('click', () => selectRegion(cell));
+        grid.appendChild(t);
+      });
+    });
+    // 疆域标记（质心）
+    REG.forEach(r => {
+      const m = el(`
+        <div class="wm-region" style="grid-column:${r.c};grid-row:${r.r};--reg-c:${r.col}">
+          ${r.unread ? `<div class="beacon"><span class="beacon__count">${r.unread}</span></div>` : ''}
+          <div class="wm-region__name">${r.name}</div>
+          <div class="wm-region__code">${r.code} · ${r.short}</div>
+        </div>`);
+      grid.appendChild(m);
+    });
+
+    /* ---------- 渲染：图例（可点击筛选） ---------- */
+    const legend = document.getElementById('legend');
+    function renderLegend() {
+      legend.innerHTML = '';
+      REG.forEach(r => {
+        const item = el(`
+          <div class="legend__item ${state.reg===r.id?'is-active':''}" data-reg="${r.id}">
+            <span class="legend__sq" style="background:${r.col}"></span>${r.name}
+            ${r.unread ? `<span class="t-gold" style="font-family:var(--font-pixel);font-size:8px">+${r.unread}</span>` : ''}
+          </div>`);
+        item.addEventListener('click', () => selectRegion(r.id));
+        legend.appendChild(item);
+      });
+    }
+
+    /* ---------- 渲染：今日推送 ---------- */
+    const bc = document.getElementById('broadcast');
+    TODAY.forEach((p,i) => {
+      const r = regById(p.reg);
+      const card = el(`
+        <article class="intel ${p.unread?'intel--unread':''}" style="--reg-c:${r.col}">
+          <div class="intel__top">
+            <span class="intel__reg" style="--reg-c:${r.col}">${r.code} · ${r.name}</span>
+            <span class="intel__src">${p.src}</span>
+          </div>
+          <div class="intel__title">${p.title}</div>
+          <div class="intel__sum">${p.sum}</div>
+          <div class="intel__foot">
+            <span>⌖ ${p.time}</span>
+            <span>· 2026-07-11</span>
+            <span class="intel__cta">调频阅读</span>
+          </div>
+        </article>`);
+      card.addEventListener('click', () => openIntel(p));
+      bc.appendChild(card);
+    });
+
+    /* ---------- 渲染：航海日志（按月分组） ---------- */
+    const voyageBody = document.getElementById('voyageBody');
+    const voyageMeta = document.getElementById('voyageMeta');
+    function renderVoyage() {
+      const list = state.reg ? LOGS.filter(l => l.reg === state.reg) : LOGS;
+      voyageMeta.textContent = state.reg
+        ? `${regById(state.reg).name} · ${list.length} 段记录`
+        : `共 ${list.length} 段记录`;
+      voyageBody.innerHTML = '';
+      if (!list.length) {
+        voyageBody.appendChild(el(`
+          <div class="empty-state">
+            <div class="empty-state__gly">◇</div>
+            该疆域暂无历史记录<br>等待新的信号抵达
+          </div>`));
+        return;
+      }
+      // 按月分组
+      const groups = {};
+      list.forEach(l => {
+        const [y,m] = l.d.split('-'); const key = `${y}-${m}`;
+        (groups[key] = groups[key] || []).push(l);
+      });
+      Object.keys(groups).sort().reverse().forEach(key => {
+        const [y,m] = key.split('-');
+        const g = el(`<div class="month-group"></div>`);
+        g.appendChild(el(`<div class="month-group__head">▣ ${y} · ${MONTHS[+m-1]} <span class="month-group__count">${groups[key].length} 篇</span></div>`));
+        const arch = el(`<div class="archive"></div>`);
+        groups[key].forEach(l => {
+          const r = regById(l.reg);
+          const [,,dd] = l.d.split('-');
+          const card = el(`
+            <div class="log" style="--reg-c:${r.col}">
+              <div class="log__date"><div class="log__day">${+dd}</div><div class="log__mon">${MONTHS[+m-1]}</div></div>
+              <div class="log__body">
+                <div class="log__top">
+                  <span class="log__reg" style="--reg-c:${r.col}">${r.name}</span>
+                  <span class="log__time">⌖ ${l.time}</span>
+                </div>
+                <div class="log__title">${l.title}</div>
+                <div class="log__src">来源 · ${l.src}</div>
+              </div>
+            </div>`);
+          card.addEventListener('click', () => openIntel({ ...l, sum:'', body:'（历史记录正文 · 演示占位）\n\n该功能将在后端接入后提供完整正文阅读。\n当前原型展示情报卡的样式与交互。' }));
+          arch.appendChild(card);
+        });
+        g.appendChild(arch);
+        voyageBody.appendChild(g);
+      });
+    }
+
+    /* ---------- 渲染：顶部筛选 chips ---------- */
+    const vfilters = document.getElementById('vfilters');
+    function renderFilters() {
+      vfilters.innerHTML = '';
+      const all = el(`<div class="vchip ${state.reg===null?'is-active':''}">全部</div>`);
+      all.addEventListener('click', () => selectRegion(null));
+      vfilters.appendChild(all);
+      REG.forEach(r => {
+        const c = el(`<div class="vchip ${state.reg===r.id?'is-active':''}" style="--reg-c:${r.col}">${r.name}</div>`);
+        c.addEventListener('click', () => selectRegion(r.id));
+        vfilters.appendChild(c);
+      });
+    }
+
+    /* ---------- 选中疆域：联动地图高亮 + 日志筛选 ---------- */
+    const state = { reg: null };
+    function selectRegion(id) {
+      state.reg = id;
+      // 地图大陆高亮/变暗
+      document.querySelectorAll('.wm-tile.land').forEach(t => {
+        const dim = id !== null && t.dataset.reg !== String(id);
+        t.classList.toggle('is-dim', dim);
+      });
+      renderLegend();
+      renderFilters();
+      renderVoyage();
+      if (id) {
+        const r = regById(id);
+        notify(`调频至 ${r.name}（${r.code}）`, r.unread ? 'gold' : '');
+        document.getElementById('voyageBody').scrollIntoView({ behavior:'smooth', block:'start' });
+      }
+    }
+
+    /* ---------- 阅读模态 ---------- */
+    function openIntel(p) {
+      const r = regById(p.reg);
+      document.getElementById('readTitle').textContent = `▶ ${r.name} · 情报`;
+      document.getElementById('readBody').innerHTML = `
+        <div class="row" style="margin-bottom:12px">
+          <span class="badge" style="background:${r.col};color:var(--bg-void)">${r.code} ${r.name}</span>
+          <span class="t-faint t-pixel" style="font-size:8px;margin-left:auto">${p.d||'2026-07-11'} · ⌖ ${p.time}</span>
+        </div>
+        <div style="font-weight:700;font-size:18px;line-height:1.4;letter-spacing:.5px;margin-bottom:10px">${p.title}</div>
+        ${p.sum ? `<div style="font-size:13px;color:var(--accent-bright);line-height:1.6;margin-bottom:14px;border-left:3px solid var(--accent);padding-left:10px">${p.sum}</div>` : ''}
+        <div style="font-size:14px;line-height:1.75;color:var(--text-dim);white-space:pre-line">${p.body}</div>
+        <div class="sec-divider" style="margin-top:18px">END OF TRANSMISSION</div>`;
+      openModal('readModal');
+    }
+
+    /* ---------- 初始化 ---------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderLegend();
+      renderFilters();
+      renderVoyage();
+    });
+  </script>
+</body>
+</html>
