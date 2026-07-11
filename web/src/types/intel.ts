@@ -40,3 +40,12 @@ export interface IntelStats {
   archivedCount: number // 已归档
   unreadCount: number // 待读（视觉效果，= 今日未读）
 }
+
+/** 航海日志分页响应 */
+export interface ArchivePage {
+  items: Article[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}

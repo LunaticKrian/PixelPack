@@ -12,6 +12,7 @@ from app.models import (  # noqa: F401 – ensure tables are created
     AdditionalCost,
     Category,
     DailyQuest,
+    IntelArticle,
     Item,
     ItemImage,
     Journal,
@@ -20,7 +21,7 @@ from app.models import (  # noqa: F401 – ensure tables are created
     UserAchievement,
     item_tags,
 )
-from app.routers import auth, categories, items, journals, quests, stats, tags
+from app.routers import auth, categories, intel, items, journals, quests, stats, tags
 
 
 @asynccontextmanager
@@ -28,7 +29,31 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     # Create all database tables on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield
+
+    # 每日 AI 资讯定时生成（APScheduler）
+    scheduler = None
+    if settings.INTEL_ENABLED:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from apscheduler.triggers.cron import CronTrigger
+
+        from app.services.intel import scheduled_generate_intel
+
+        scheduler = AsyncIOScheduler(timezone=settings.INTEL_TZ)
+        scheduler.add_job(
+            scheduled_generate_intel,
+            CronTrigger(hour=settings.INTEL_CRON_HOUR, minute=settings.INTEL_CRON_MINUTE),
+            id="intel_daily",
+            coalesce=True,         # 错过的多次只补跑一次
+            max_instances=1,       # 绝不并发跑两个 Agent
+            misfire_grace_time=3600,
+        )
+        scheduler.start()
+
+    try:
+        yield
+    finally:
+        if scheduler is not None:
+            scheduler.shutdown(wait=False)
 
 
 app = FastAPI(
@@ -56,6 +81,7 @@ app.include_router(items.router)
 app.include_router(stats.router)
 app.include_router(quests.router)
 app.include_router(journals.router)
+app.include_router(intel.router)
 
 # ── Static Files ───────────────────────────────────────────────────────
 UPLOAD_DIR = getattr(settings, 'upload_dir', 'uploads')

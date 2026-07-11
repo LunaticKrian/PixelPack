@@ -9,6 +9,10 @@ const notify = useNotifyStore()
 // ── state ──
 const todayIntel = ref<Article[]>([])
 const archive = ref<Article[]>([])
+const currentPage = ref(1)
+const totalPages = ref(1)
+const archiveTotal = ref(0)
+const PAGE_SIZE = 20
 const stats = ref<IntelStats | null>(null)
 const loadingIntel = ref(true)
 const loadingArchive = ref(true)
@@ -26,14 +30,11 @@ const unreadByRegion = computed(() => {
   return m
 })
 
-// ── 筛选 + 按月分组 ──
+// ── 按月分组（当前页） ──
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-const filteredArchive = computed(() =>
-  activeRegion.value ? archive.value.filter((a) => a.region === activeRegion.value) : archive.value,
-)
 const groupedArchive = computed(() => {
   const groups: Record<string, Article[]> = {}
-  filteredArchive.value.forEach((a) => {
+  archive.value.forEach((a) => {
     const key = a.publishedAt.slice(0, 7)
     ;(groups[key] ||= []).push(a)
   })
@@ -54,9 +55,34 @@ const activeRegionDef = computed(() =>
   activeRegion.value ? REGIONS.find((r) => r.slug === activeRegion.value) ?? null : null,
 )
 
-// ── 疆域筛选 ──
+// ── 航海日志：加载 / 翻页 / 疆域筛选 ──
+async function loadArchive() {
+  loadingArchive.value = true
+  try {
+    const res = await listArchive(activeRegion.value, currentPage.value, PAGE_SIZE)
+    archive.value = res.items
+    totalPages.value = res.totalPages
+    archiveTotal.value = res.total
+  } catch {
+    notify.error('加载航海日志失败')
+  } finally {
+    loadingArchive.value = false
+  }
+}
 function selectRegion(slug: RegionSlug | null) {
   activeRegion.value = slug
+  currentPage.value = 1 // 切疆域回到第 1 页
+  void loadArchive()
+}
+function prevPage() {
+  if (currentPage.value <= 1) return
+  currentPage.value--
+  void loadArchive()
+}
+function nextPage() {
+  if (currentPage.value >= totalPages.value) return
+  currentPage.value++
+  void loadArchive()
 }
 
 // ── 阅读模态 ──
@@ -130,14 +156,7 @@ onMounted(() => {
     .finally(() => {
       loadingIntel.value = false
     })
-  listArchive()
-    .then((list) => {
-      archive.value = list
-    })
-    .catch(() => notify.error('加载航海日志失败'))
-    .finally(() => {
-      loadingArchive.value = false
-    })
+  void loadArchive()
 })
 
 onUnmounted(() => {
@@ -239,7 +258,9 @@ onUnmounted(() => {
       <div class="voyage-head">
         <span class="voyage-name">▤ 航海日志 · ARCHIVE</span>
         <span class="voyage-meta">{{
-          activeRegionDef ? `${activeRegionDef.name} · ${filteredArchive.length} 段` : `共 ${filteredArchive.length} 段记录`
+          activeRegionDef
+            ? `${activeRegionDef.name} · 共 ${archiveTotal} 段`
+            : `共 ${archiveTotal} 段记录`
         }}</span>
       </div>
 
@@ -268,7 +289,7 @@ onUnmounted(() => {
           <p class="loading-text">翻开航海日志...</p>
         </div>
 
-        <div v-else-if="!filteredArchive.length" class="empty-state">
+        <div v-else-if="!archive.length" class="empty-state">
           <div class="empty-gly">◇</div>
           该疆域暂无历史记录<br />等待新的信号抵达
         </div>
@@ -305,9 +326,9 @@ onUnmounted(() => {
       </div>
 
       <div class="pager">
-        <button class="pager-btn" @click="notify.success('已是最早一页')">◀ 更早</button>
-        <span>第 <b class="t-gold">1</b> / 3 页</span>
-        <button class="pager-btn" @click="notify.success('加载更早的记录…')">更早 ▶</button>
+        <button class="pager-btn" :disabled="currentPage <= 1" @click="prevPage">◀ 上一页</button>
+        <span>第 <b class="t-gold">{{ currentPage }}</b> / {{ totalPages || 1 }} 页</span>
+        <button class="pager-btn" :disabled="currentPage >= totalPages" @click="nextPage">下一页 ▶</button>
       </div>
     </section>
 
@@ -887,6 +908,14 @@ onUnmounted(() => {
 .pager-btn:hover {
   color: var(--pixel-primary);
   border-color: var(--pixel-primary);
+}
+.pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pager-btn:disabled:hover {
+  color: var(--pixel-text-secondary);
+  border-color: var(--pixel-border);
 }
 
 /* ════ 阅读模态 ════ */

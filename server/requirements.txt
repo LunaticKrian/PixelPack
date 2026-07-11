@@ -9,5 +9,9 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 Pillow
-
-
+# ── AI 资讯（世界地图）──
+claude-agent-sdk
+apscheduler
+feedparser
+html2text
+httpx
