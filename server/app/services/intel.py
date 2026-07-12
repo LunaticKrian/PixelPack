@@ -124,28 +124,37 @@ async def store_daily_intel(
 ) -> int:
     """把 Agent 产出的草稿入库。published_at = 今日。
 
-    - 今日已有且 overwrite=False → 跳过（返回 0）。
-    - 今日已有且 overwrite=True → 先清空今日再写。
+    - overwrite=True（手动「发起侦测」刷新）：先清空今日再全部写入。
+    - overwrite=False（每日定时任务，默认）：**基于数据库已有数据去重追加**——
+      以 url（无 url 则退化为标题）为去重键，跳过已存在的，仅追加新条目。
     """
     today = date.today()
-    existing = (await db.scalar(
-        select(func.count()).select_from(IntelArticle)
-        .where(IntelArticle.published_at == today)
-    )) or 0
 
-    if existing and not overwrite:
-        logger.info("intel today already has %d articles, skip", existing)
-        return 0
-    if existing and overwrite:
+    if overwrite:
         await db.execute(
             delete(IntelArticle).where(IntelArticle.published_at == today)
         )
+        existing_keys: set[str] = set()
+    else:
+        # 取库中全部 (url, title) 作为去重依据
+        rows = (await db.execute(
+            select(IntelArticle.url, IntelArticle.title)
+        )).all()
+        existing_keys = {_dedup_key(url, title) for url, title in rows if url or title}
 
     count = 0
     for d in drafts:
         if d.region not in REGIONS:
             logger.warning("skip draft with invalid region: %s", d.region)
             continue
+        key = _dedup_key(d.url, d.title)
+        if key and key in existing_keys:
+            logger.info("[store] 跳过重复 | %s | %s", d.region, (d.title or "")[:60])
+            continue
+        logger.info(
+            "[store] +%s | %s | %s",
+            d.region, (d.source or "?")[:20], (d.title or "")[:60],
+        )
         db.add(IntelArticle(
             region=d.region,
             title=(d.title or "")[:200],
@@ -156,9 +165,19 @@ async def store_daily_intel(
             read_time=(d.read_time or "5 min")[:16],
             published_at=today,
         ))
+        existing_keys.add(key)
         count += 1
     await db.flush()
     return count
+
+
+def _dedup_key(url: str | None, title: str | None) -> str:
+    """去重键：优先 url；无 url 则用规范化标题；都空返回空串（不去重）。"""
+    if url:
+        return f"url:{url.strip()}"
+    if title:
+        return f"title:{title.strip().lower()}"
+    return ""
 
 
 async def generate_intel_now(*, overwrite: bool = False) -> int:

@@ -5,9 +5,14 @@ from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
 from app.config import settings
+from app.logging_config import setup_logging
 from app.database import Base, engine
+
+# 必须在业务模块实例化 logger 之前完成配置
+setup_logging()
 from app.models import (  # noqa: F401 – ensure tables are created
     AdditionalCost,
     Category,
@@ -29,6 +34,12 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     # Create all database tables on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # 兜底：把误存成 datetime 字符串的 published_at 归一化为 'YYYY-MM-DD'，
+        # 避免 SQLite Date 解析器在读取时抛 Invalid isoformat（历史/外部脏数据）。
+        await conn.execute(text(
+            "UPDATE intel_articles SET published_at = date(published_at) "
+            "WHERE published_at != date(published_at)"
+        ))
 
     # 每日 AI 资讯定时生成（APScheduler）
     scheduler = None

@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     INTEL_TZ: str = "Asia/Shanghai"         # 调度时区
     INTEL_CRON_HOUR: int = 7                # 每日生成 - 小时
     INTEL_CRON_MINUTE: int = 0              # 每日生成 - 分钟
+    # Agent 检索 / 产出参数（原魔法值：40 / 4-6）
+    INTEL_SEARCH_LIMIT: int = 40            # search_ai_news 每次拉取的候选条数
+    INTEL_MIN_ARTICLES: int = 4             # 单次产出情报下限
+    INTEL_MAX_ARTICLES: int = 6             # 单次产出情报上限
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

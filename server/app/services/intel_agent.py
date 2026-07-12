@@ -12,8 +12,14 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from claude_agent_sdk import (
+    AssistantMessage,
     ClaudeAgentOptions,
     ResultMessage,
+    TextBlock,
+    ThinkingBlock,
+    ToolResultBlock,
+    ToolUseBlock,
+    UserMessage,
     create_sdk_mcp_server,
     query,
     tool,
@@ -24,6 +30,14 @@ from app.schemas.intel import ArticleDraft, IntelBatch
 from app.services.intel_sources import fetch_page_text, fetch_rss_items
 
 logger = logging.getLogger(__name__)
+
+
+def _trunc(s: str, limit: int = 2000) -> str:
+    """超长文本截断，便于日志可读。"""
+    if s is None:
+        return ""
+    s = str(s)
+    return s if len(s) <= limit else f"{s[:limit]}…<+{len(s) - limit} chars>"
 
 # 把 .env/Settings 里的 GLM 配置注入 os.environ，确保 Agent SDK 拉起的子进程稳定继承
 # （pydantic-settings 读 .env 只写 Settings 对象，不写 os.environ）。
@@ -43,19 +57,29 @@ for _k in ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_MODEL"):
     input_schema={
         "type": "object",
         "properties": {
-            "limit": {"type": "integer", "default": 40, "description": "返回条数，默认 40"},
+            "limit": {
+                "type": "integer",
+                "default": settings.INTEL_SEARCH_LIMIT,
+                "description": f"返回条数，默认 {settings.INTEL_SEARCH_LIMIT}",
+            },
         },
         "required": [],
     },
 )
 async def search_ai_news(args):  # noqa: ANN001
-    limit = 40
+    logger.info("[tool→search_ai_news] 输入 args=%s", args)
+    limit = settings.INTEL_SEARCH_LIMIT
     if isinstance(args, dict) and args.get("limit") is not None:
         try:
             limit = int(args["limit"])
         except (TypeError, ValueError):
-            limit = 40
+            limit = settings.INTEL_SEARCH_LIMIT
     items = await fetch_rss_items(limit=max(10, limit))
+    logger.info(
+        "[tool←search_ai_news] 输出 %d 条候选 | 示例: %s",
+        len(items),
+        _trunc(", ".join(f"{it.get('source', '')}:{it.get('title', '')}" for it in items[:5])),
+    )
     return {"content": [{"type": "text", "text": json.dumps({"items": items}, ensure_ascii=False)}]}
 
 
@@ -73,7 +97,9 @@ async def search_ai_news(args):  # noqa: ANN001
 )
 async def fetch_page(args):  # noqa: ANN001
     url = (args.get("url", "") if isinstance(args, dict) else "") or ""
+    logger.info("[tool→fetch_page] 输入 url=%s", url)
     text = await fetch_page_text(url)
+    logger.info("[tool←fetch_page] 输出 %d 字符 | 预览: %s", len(text or ""), _trunc((text or "").strip(), 400))
     return {"content": [{"type": "text", "text": text}]}
 
 
@@ -83,11 +109,13 @@ INTEL_SERVER = create_sdk_mcp_server(
 
 
 # ── prompt ────────────────────────────────────────────────────────────
-SYSTEM_PROMPT = """你是 PixelPack 的 AI 技术情报分析师。任务：把当天的 AI 动态归纳成结构化情报卡。
+def build_system_prompt() -> str:
+    """系统提示。检索条数与产出篇数区间均来自 config，避免魔法值。"""
+    return f"""你是 PixelPack 的 AI 技术情报分析师。任务：把当天的 AI 动态归纳成结构化情报卡。
 
 流程：
-1. 先调用 search_ai_news(limit=40) 拿到候选条目（标题/链接/来源/摘要）。
-2. 从中挑选 4-6 条最有价值、信息量大的，尽量覆盖不同疆域，避免全部集中在一类。
+1. 先调用 search_ai_news(limit={settings.INTEL_SEARCH_LIMIT}) 拿到候选条目（标题/链接/来源/摘要）。
+2. 从中挑选 {settings.INTEL_MIN_ARTICLES}-{settings.INTEL_MAX_ARTICLES} 条最有价值、信息量大的，尽量覆盖不同疆域，避免全部集中在一类。
 3. 对摘要不足以写正文的条目，可调用 fetch_page(url) 读原文补充细节；不必每条都读。
 4. 每条输出：中文标题、中文一句话摘要、2-4 段中文正文、来源名、原文 URL、阅读时长。
 5. 内容必须基于工具返回的真实条目，禁止虚构；URL 用工具返回的真实链接。
@@ -114,13 +142,13 @@ def build_prompt() -> str:
     today, weekday = _today_str_weekday()
     return (
         f"今天是 {today}（{weekday}）。请检索并归纳最近 1-2 天的 AI 资讯，"
-        f"输出 4-6 篇覆盖不同疆域的情报。\n{_REGIONS_HINT}"
+        f"输出 {settings.INTEL_MIN_ARTICLES}-{settings.INTEL_MAX_ARTICLES} 篇覆盖不同疆域的情报。\n{_REGIONS_HINT}"
     )
 
 
 def build_options() -> ClaudeAgentOptions:
     return ClaudeAgentOptions(
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=build_system_prompt(),
         mcp_servers={"intel": INTEL_SERVER},
         allowed_tools=["search_ai_news", "fetch_page"],
         permission_mode="bypassPermissions",
@@ -133,22 +161,81 @@ def build_options() -> ClaudeAgentOptions:
     )
 
 
+def _log_stream_message(msg) -> None:
+    """把 Agent 流式产生的每条消息按类型打印输入/输出。"""
+    if isinstance(msg, AssistantMessage):
+        for block in getattr(msg, "content", []) or []:
+            if isinstance(block, TextBlock):
+                logger.info("[agent→输出·文本] %s", _trunc(block.text))
+            elif isinstance(block, ToolUseBlock):
+                logger.info(
+                    "[agent→调用工具] %s | 输入=%s",
+                    block.name, _trunc(json.dumps(block.input, ensure_ascii=False), 1000),
+                )
+            elif isinstance(block, ThinkingBlock):
+                logger.debug("[agent·思考] %s", _trunc(block.thinking))
+            else:
+                logger.debug("[agent→块] %s", type(block).__name__)
+    elif isinstance(msg, UserMessage):
+        # UserMessage 通常是工具结果回填给模型
+        content = getattr(msg, "content", None)
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, ToolResultBlock):
+                    txt = block.content
+                    if isinstance(txt, list):
+                        txt = " ".join(getattr(b, "text", str(b)) for b in txt)
+                    logger.info(
+                        "[tool→结果回填] is_error=%s | %s",
+                        block.is_error, _trunc(str(txt), 600),
+                    )
+        elif isinstance(content, str) and content:
+            logger.info("[user→输入] %s", _trunc(content))
+    elif isinstance(msg, ResultMessage):
+        logger.info(
+            "[agent·结束] subtype=%s stop=%s turns=%s cost=%.4fUSD",
+            msg.subtype, msg.stop_reason, getattr(msg, "num_turns", None),
+            getattr(msg, "total_cost_usd", 0) or 0,
+        )
+    else:
+        logger.debug("[agent·消息] %s", type(msg).__name__)
+
+
 async def fetch_ai_intel() -> list[ArticleDraft]:
     """跑一次 Agent，返回结构化情报草稿。失败抛异常交由上层处理。"""
+    prompt = build_prompt()
+    options = build_options()
+
+    logger.info("=" * 60)
+    logger.info("[agent·启动] model=%s base=%s max_turns=%s",
+                os.environ.get("ANTHROPIC_MODEL"), os.environ.get("ANTHROPIC_BASE_URL"),
+                settings.INTEL_MAX_TURNS)
+    logger.info("[agent·系统提示] %s", _trunc(build_system_prompt(), 1200))
+    logger.info("[agent·用户输入] %s", prompt)
+    logger.info("-" * 60)
+
     result_msg: ResultMessage | None = None
-    async for msg in query(prompt=build_prompt(), options=build_options()):
+    async for msg in query(prompt=prompt, options=options):
+        _log_stream_message(msg)
         if isinstance(msg, ResultMessage):
             result_msg = msg
-            logger.info(
-                "intel agent result: subtype=%s turns=%s",
-                msg.subtype, getattr(msg, "num_turns", None),
-            )
 
+    logger.info("-" * 60)
     if result_msg is None:
+        logger.error("[agent·失败] 未返回 ResultMessage")
         raise RuntimeError("Agent 未返回结果")
+
     if result_msg.subtype != "success" or not result_msg.structured_output:
+        logger.error("[agent·失败] subtype=%s errors=%s", result_msg.subtype, getattr(result_msg, "errors", None))
         raise RuntimeError(f"Agent 失败: subtype={result_msg.subtype}")
 
-    batch = IntelBatch.model_validate(result_msg.structured_output)
-    logger.info("intel agent produced %d drafts", len(batch.articles))
+    raw = result_msg.structured_output
+    logger.info("[agent·结构化输出] 原始=%s", _trunc(json.dumps(raw, ensure_ascii=False), 1500))
+    batch = IntelBatch.model_validate(raw)
+    logger.info(
+        "[agent·完成] 产出 %d 篇 | %s",
+        len(batch.articles),
+        " | ".join(f"{a.region}:{_trunc(a.title, 24)}" for a in batch.articles),
+    )
+    logger.info("=" * 60)
     return batch.articles
