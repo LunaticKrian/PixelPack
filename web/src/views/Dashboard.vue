@@ -8,7 +8,9 @@ import {
 import { getItem } from '../api/items'
 import type { Item } from '../types/item'
 import { getQuestSummary } from '../api/quests'
+import { listTasks } from '../api/tasks'
 import type { QuestSummary, Achievement } from '../types/quest'
+import type { Task } from '../types/task'
 import { listJournals, createJournal, deleteJournal } from '../api/journals'
 import type { Journal } from '../types/journal'
 import { formatCurrency, formatDays } from '../utils/format'
@@ -61,6 +63,7 @@ const overview = ref<OverviewStats | null>(null)
 const recentItems = ref<RecentItem[]>([])
 const warrantyAlerts = ref<WarrantyAlert[]>([])
 const questSummary = ref<QuestSummary | null>(null)
+const todayTasks = ref<Task[]>([])
 
 // Journal state
 const journals = ref<Journal[]>([])
@@ -85,11 +88,9 @@ const idleCount = computed(() => totalItems - activeCount)
 const mpPercent = computed(() => totalItems > 0 ? Math.min(100, Math.round((idleCount / totalItems) * 100)) : 0)
 const expPercent = computed(() => {
   if (!questSummary.value) return 0
-  const exp = questSummary.value.total_exp
-  const currentLevel = questSummary.value.level
-  const nextLevelExp = currentLevel * 50
-  const prevLevelExp = (currentLevel - 1) * 50
-  return Math.min(100, Math.round(((exp - prevLevelExp) / (nextLevelExp - prevLevelExp)) * 100))
+  // 当前等级内进度：每级 50，exp_to_next 为距下一级剩余
+  const per = 50
+  return Math.min(100, Math.max(0, Math.round(((per - questSummary.value.exp_to_next) / per) * 100)))
 })
 
 function onAchHover(ach: Achievement, event: MouseEvent) {
@@ -110,17 +111,19 @@ function onAchLeave() {
 async function loadAll() {
   loading.value = true
   try {
-    const [ov, recent, warranty, qs, jrnl] = await Promise.all([
+    const [ov, recent, warranty, qs, t, jrnl] = await Promise.all([
       getOverview(),
       getRecentItems(5),
       getWarrantyAlerts(30),
       getQuestSummary(),
+      listTasks(),
       listJournals(20),
     ])
     overview.value = ov
     recentItems.value = recent
     warrantyAlerts.value = warranty
     questSummary.value = qs
+    todayTasks.value = t
     journals.value = jrnl
   } catch (e) {
     console.error('Dashboard load error', e)
@@ -369,13 +372,13 @@ onUnmounted(() => {
           </div>
           <div class="quest-cards">
             <div
-              v-for="q in questSummary?.daily_quests ?? []"
+              v-for="q in todayTasks"
               :key="q.id"
               class="quest-card"
               :class="{ completed: q.completed }"
             >
-              <div class="qc-name">{{ q.name }}</div>
-              <div class="qc-desc">{{ q.description }}</div>
+              <div class="qc-name">{{ q.title }}</div>
+              <div v-if="q.description" class="qc-desc">{{ q.description }}</div>
               <div class="qc-bar-track">
                 <div
                   class="qc-bar-fill"

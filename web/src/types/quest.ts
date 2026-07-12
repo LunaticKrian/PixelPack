@@ -1,14 +1,3 @@
-export interface DailyQuest {
-  id: number
-  quest_key: string
-  name: string
-  description: string
-  target: number
-  progress: number
-  completed: boolean
-  exp_reward: number
-}
-
 export interface Achievement {
   achievement_id: string
   name: string
@@ -20,10 +9,14 @@ export interface Achievement {
 }
 
 export interface QuestSummary {
-  daily_quests: DailyQuest[]
-  achievements: Achievement[]
   level: number
-  total_exp: number
+  exp: number
+  exp_to_next: number
+  streak: number
+  today_total: number
+  today_completed: number
+  tasks_completed_total: number
   achievements_completed: number
   achievements_total: number
+  achievements: Achievement[]
 }

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXA · AI 任务内核 — PixelPack</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="sci">
+  <div class="app">
+
+    <!-- 顶栏 -->
+    <header class="topbar">
+      <a href="tasks.html" class="topbar__back">◀ BACK</a>
+      <div class="topbar__title">NEXA</div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:6px; font-family:var(--sci-mono); font-size:11px; color:var(--c-text-dim);">
+        <span class="dot-online"></span> 内核在线 · SSE LINK
+      </div>
+    </header>
+
+    <section class="panel" style="padding:0 14px;">
+      <div class="panel__head" style="border-bottom:var(--pix-bd); margin:0 -14px; padding-left:14px; padding-right:14px;">
+        任务生成内核
+      </div>
+
+      <div class="chat-layout">
+
+        <!-- 消息流 -->
+        <div class="chat-thread" id="thread">
+
+          <div class="msg msg--ai">
+            <div class="msg__avatar"><!-- CSS 绘制内核 --></div>
+            <div class="msg__col">
+              <div class="msg__name">NEXA</div>
+              <div class="msg__bubble">链路已建立。请描述你今天的任务目标——学习、工作或生活计划，我会将其拆解为可执行任务并写入清单。</div>
+            </div>
+          </div>
+
+          <div class="msg msg--me">
+            <div class="msg__avatar">◈</div>
+            <div class="msg__col">
+              <div class="msg__name">你</div>
+              <div class="msg__bubble">今天考研冲刺，上午复习高数第三章，下午做英语阅读 2 篇并背 50 个单词，晚上跑步放松一下。</div>
+            </div>
+          </div>
+
+          <!-- 内核状态行 -->
+          <div class="tool-line"><span class="tool-line__dot"></span> 内核运行中 · 检索任务池 …</div>
+
+          <!-- 任务即时写入 -->
+          <div class="summoned">
+            <span class="summoned__plus">▸ TASK</span>
+            <span class="summoned__txt">读完《高数》第三章并整理 3 条笔记</span>
+            <span class="summoned__cat" style="color:var(--cat-study); border-color:var(--cat-study)">study</span>
+            <span class="quest__exp" style="min-width:auto">+20 XP</span>
+          </div>
+          <div class="summoned">
+            <span class="summoned__plus">▸ TASK</span>
+            <span class="summoned__txt">背 50 个考研核心单词</span>
+            <span class="summoned__cat" style="color:var(--cat-study); border-color:var(--cat-study)">study</span>
+            <span class="quest__exp" style="min-width:auto">+10 XP</span>
+          </div>
+          <div class="summoned">
+            <span class="summoned__plus">▸ TASK</span>
+            <span class="summoned__txt">英语真题阅读 2 篇 + 精读笔记</span>
+            <span class="summoned__cat" style="color:var(--cat-study); border-color:var(--cat-study)">study</span>
+            <span class="quest__exp" style="min-width:auto">+20 XP</span>
+          </div>
+          <div class="summoned">
+            <span class="summoned__plus">▸ TASK</span>
+            <span class="summoned__txt">跑步 30 分钟 / 听一集播客</span>
+            <span class="summoned__cat" style="color:var(--cat-health); border-color:var(--cat-health)">health</span>
+            <span class="quest__exp" style="min-width:auto">+10 XP</span>
+          </div>
+
+          <div class="tray-tip">// 4 项任务已写入今日清单 · 前往「委托大厅」查看</div>
+
+          <!-- 打字机进行中（演示）-->
+          <div class="msg msg--ai">
+            <div class="msg__avatar"></div>
+            <div class="msg__col">
+              <div class="msg__name">NEXA</div>
+              <div class="msg__bubble" id="typing">已为你排布 4 项任务，合计 60 XP。建议从高数切入——上午算力峰值，适合高强度推演。<span class="cursor"></span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 命令行式输入 -->
+        <div class="chat-compose">
+          <input id="composer" class="chat-input" type="text"
+                 placeholder="描述你今天的学习或工作计划…" />
+          <button class="btn chat-send" onclick="sendDemo()">SEND ▶</button>
+        </div>
+        <div class="chat-hint">// NEXA 会将你的计划拆解为任务并直接写入清单 · Enter 发送</div>
+
+      </div>
+    </section>
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    const box = document.getElementById('composer');
+    box.addEventListener('keydown', e => { if (e.key === 'Enter') sendDemo(); });
+  </script>
+</body>
+</html>

@@ -16,17 +16,21 @@ setup_logging()
 from app.models import (  # noqa: F401 – ensure tables are created
     AdditionalCost,
     Category,
+    ChatMessage,
+    ChatSession,
     DailyQuest,
     IntelArticle,
     Item,
     ItemImage,
     Journal,
     Tag,
+    Task,
     User,
     UserAchievement,
     item_tags,
 )
-from app.routers import auth, categories, intel, items, journals, quests, stats, tags
+from app.routers import auth, categories, chat, intel, items, journals, quests, stats, tags, tasks
+from app.utils.migrate import ensure_column
 
 
 @asynccontextmanager
@@ -34,6 +38,8 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     # Create all database tables on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # create_all 不会 ALTER 已存在的表：给 users 补 exp 列（任务系统经验持久化）
+        await ensure_column(conn, "users", "exp", "INTEGER DEFAULT 0")
         # 兜底：把误存成 datetime 字符串的 published_at 归一化为 'YYYY-MM-DD'，
         # 避免 SQLite Date 解析器在读取时抛 Invalid isoformat（历史/外部脏数据）。
         await conn.execute(text(
@@ -93,6 +99,8 @@ app.include_router(stats.router)
 app.include_router(quests.router)
 app.include_router(journals.router)
 app.include_router(intel.router)
+app.include_router(tasks.router)
+app.include_router(chat.router)
 
 # ── Static Files ───────────────────────────────────────────────────────
 UPLOAD_DIR = getattr(settings, 'upload_dir', 'uploads')

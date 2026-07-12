@@ -17,6 +17,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     settings: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
+    exp: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     character_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
     portrait_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     character_class: Mapped[str | None] = mapped_column(String(100), nullable=True)

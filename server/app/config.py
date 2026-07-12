@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     INTEL_MIN_ARTICLES: int = 4             # 单次产出情报下限
     INTEL_MAX_ARTICLES: int = 6             # 单次产出情报上限
 
+    # ── 任务系统 ──
+    TASK_DEFAULT_EXP: int = 10              # 手动添加任务的默认经验
+    TASK_EXP_PER_LEVEL: int = 50            # 每多少经验升一级
+    TASK_CATEGORIES: str = "study,work,life,health,other"
+    TASK_AGENT_MAX_TURNS: int = 12          # 对话生成任务 Agent 单次最大轮数
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

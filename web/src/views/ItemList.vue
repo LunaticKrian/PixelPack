@@ -8,7 +8,6 @@ import type { Item, Category, Tag, ItemImage, AdditionalCost } from '../types/it
 import type { PaginatedResponse } from '../types/api'
 import { formatCurrency, formatDays } from '../utils/format'
 import { exportItemsCSV } from '../utils/export'
-import { reportProgress } from '../api/quests'
 import Categories from './Categories.vue'
 import Tags from './Tags.vue'
 import Stats from './Stats.vue'
@@ -98,9 +97,6 @@ const activeModal = ref<'categories' | 'tags' | 'stats' | null>(null)
 
 function openModal(type: 'categories' | 'tags' | 'stats') {
   activeModal.value = type
-  if (type === 'stats') {
-    reportProgress('REVIEW_STATS').catch(() => {})
-  }
 }
 
 function closeModal() {
@@ -466,7 +462,6 @@ async function openItemDetail(id: number) {
     detailItem.value = res
     detailImages.value = (res as any).images || []
     detailCosts.value = (res as any).additional_costs || []
-    reportProgress('VIEW_ITEMS').catch(() => {})
   } catch (e: any) {
     error.value = e?.data?.detail || '加载物品详情失败'
     showDetailModal.value = false

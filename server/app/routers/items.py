@@ -120,10 +120,6 @@ async def create_new_item(
 ) -> ItemResponse:
     item = await create_item(db, current_user.id, data)
     item = await get_item_by_id(db, item.id, current_user.id)
-    # Quest tracking
-    from app.services.quest import increment_quest_progress as _qp, check_achievements as _ca
-    await _qp(db, current_user.id, "ADD_ITEMS")
-    await _ca(db, current_user.id)
     from app.services.journal import create_system_journal as _log
     await _log(db, current_user.id, category="item_event", icon="◆", title=f"新增物品: {item.name}")
     return _item_to_response(item)
@@ -172,9 +168,6 @@ async def update_existing_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     await update_item(db, item, data)
     item = await get_item_by_id(db, item_id, current_user.id)
-    # Quest tracking
-    from app.services.quest import increment_quest_progress as _qp
-    await _qp(db, current_user.id, "EDIT_ITEM")
     return _item_to_response(item)
 
 
