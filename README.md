@@ -105,6 +105,54 @@ cd web
 npm run build
 ```
 
+## Docker 部署（生产推荐）
+
+通过 `docker-compose.yml` 一键拉起前后端两个独立容器，数据与密钥均不进镜像。
+
+```bash
+git clone https://github.com/LunaticKrian/PixelPack.git
+cd PixelPack
+
+# 1. 配置密钥（不进 git、不进镜像，仅运行时注入）
+cp server/.env.example server/.env
+vi server/.env          # 填入 ANTHROPIC_AUTH_TOKEN
+
+# 2. 构建并启动（建议直接在服务器上构建，见下方说明）
+docker compose up -d --build
+```
+
+访问 `http://<服务器IP>` 即可。常用命令：
+
+```bash
+docker compose ps            # 查看状态
+docker compose logs -f api   # 后端日志
+git pull && docker compose up -d --build   # 更新代码（./data 数据不丢）
+```
+
+**部署架构**
+
+```
+┌─ docker-compose ────────────────┐
+│  web (nginx)  :80               │
+│   ├─ 提供前端 dist 静态文件       │
+│   └─ 反代 /api、/uploads ──┐     │
+│  api (uvicorn) :8000       ▼     │
+│   └─ FastAPI + APScheduler       │
+│                                  │
+│  volumes:  ./data → /app/data    │
+│            ├─ data.db            │
+│            └─ uploads/           │
+└──────────────────────────────────┘
+```
+
+**注意事项**
+
+- **持久化**：`data.db` 与 `uploads/` 全部落入 `./data`（bind mount），容器重建/升级不丢数据，备份只需 `tar czf backup.tar.gz data/`。
+- **密钥**：`.env` 由 compose 的 `env_file` 注入；镜像可安全 push 到公开仓库。
+- **⚠️ 捆绑二进制平台一致性**：`claude-agent-sdk` 内含一个 glibc 原生二进制（约 240MB），故后端镜像**不能用 alpine**，且**构建平台须等于运行平台**。在 Apple Silicon 上构建、跑在 amd64 服务器时需 `docker buildx build --platform linux/amd64`，最稳妥仍是直接在服务器上 `docker compose build`。
+
+完整步骤、密钥安全讨论、HTTPS/域名扩展、故障排查见 **[docs/deploy.md](docs/deploy.md)**。
+
 ## API 概览
 
 | 路径前缀 | 说明 |

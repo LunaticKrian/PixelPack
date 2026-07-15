@@ -1,0 +1,22 @@
+# 构建上下文排除项 —— 不让这些东西进镜像
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# 本地数据与上传物（容器内由卷挂载提供，绝不烤进镜像）
+data.db
+uploads/
+
+# 密钥：永不进镜像（由 compose env_file 在运行时注入）
+.env
+.env.local
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store
+
+# 包管理
+package-lock.json
+node_modules/

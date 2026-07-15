@@ -103,6 +103,9 @@ app.include_router(tasks.router)
 app.include_router(chat.router)
 
 # ── Static Files ───────────────────────────────────────────────────────
-UPLOAD_DIR = getattr(settings, 'upload_dir', 'uploads')
+# 修正：原代码 getattr(settings, 'upload_dir', ...) 用了小写属性名，
+# pydantic 字段是 UPLOAD_DIR，导致环境变量永远改不了静态服务目录（文件写到
+# UPLOAD_DIR 但 /uploads 仍从默认 'uploads' 读 → 部署挂载卷时图片 404）。
+UPLOAD_DIR = settings.UPLOAD_DIR
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")

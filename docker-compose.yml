@@ -1,0 +1,39 @@
+# ── PixelPack 部署编排 ────────────────────────────────────────────────
+# 两个独立服务：
+#   api  —— FastAPI/uvicorn 后端（含 APScheduler 定时任务 + claude-agent-sdk）
+#   web  —— nginx 提供前端 dist，并反代 /api、/uploads 到 api
+#
+# 持久化：./data 目录整体挂载到容器 /app/data，data.db 与 uploads/ 都落在这里，
+#         容器重建/升级不丢数据，备份只需拷贝 ./data。
+#
+# 密钥：./server/.env 由 env_file 注入（不进镜像、不进 git）。
+#       DATABASE_URL / UPLOAD_DIR 在下面 environment 里固定指向持久化卷，
+#       即使 .env 里误写也会被覆盖。
+
+services:
+  api:
+    build: ./server
+    image: pixelpack-api
+    container_name: pixelpack-api
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    environment:
+      # 持久化到挂载卷，避免容器重建丢库 / 丢文件
+      DATABASE_URL: "sqlite+aiosqlite:////app/data/data.db"
+      UPLOAD_DIR: "/app/data/uploads"
+    volumes:
+      - ./data:/app/data
+    expose:
+      - "8000"
+    # 不直接对主机暴露 8000；外部一律经 web 容器的 nginx 访问
+
+  web:
+    build: ./web
+    image: pixelpack-web
+    container_name: pixelpack-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
