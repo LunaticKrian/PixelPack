@@ -15,6 +15,7 @@ COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
 COPY index.html vite.config.ts ./
 COPY public/ ./public/
 COPY src/ ./src/
+# 类型已修干净，恢复完整构建（vue-tsc 类型检查 + vite build）。
 RUN npm run build
 # 产物在 /app/dist
 

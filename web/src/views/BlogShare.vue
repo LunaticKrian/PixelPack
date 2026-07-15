@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/preview.css'
 import '../styles/blog-content.css'
@@ -8,7 +8,6 @@ import { getBlogByShareToken } from '../api/journals'
 import type { Blog } from '../types/journal'
 
 const route = useRoute()
-const router = useRouter()
 
 const blog = ref<Blog | null>(null)
 const loading = ref(true)

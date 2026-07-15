@@ -58,6 +58,7 @@ export const api = ofetch.create({
     if (newToken) {
       options.headers.set('Authorization', `Bearer ${newToken}`)
     }
-    return api(request, options)
+    // onResponseError 钩子要求 void 返回；重试结果交给 ofetch 重新走一遍流程。
+    await api(request, options)
   },
 })

@@ -21,7 +21,6 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
-const panelRef = ref<HTMLElement | null>(null)
 
 const markedSet = computed(() => new Set(props.markedDates))
 
@@ -174,7 +173,6 @@ watch(() => props.modelValue, (v) => {
       <span class="px-date-icon">📅</span>
     </div>
     <div
-      ref="panelRef"
       class="px-date-panel"
       :class="{ visible: open }"
       @click="onPanelClick"

@@ -83,9 +83,9 @@ const level = computed(() => questSummary.value?.level ?? (overview.value?.total
 const gold = computed(() => overview.value?.total_assets_value ?? 0)
 const activeCount = computed(() => overview.value?.active_items ?? 0)
 const totalItems = computed(() => overview.value?.total_items ?? 1)
-const hpPercent = computed(() => totalItems > 0 ? Math.round((activeCount / totalItems) * 100) : 0)
-const idleCount = computed(() => totalItems - activeCount)
-const mpPercent = computed(() => totalItems > 0 ? Math.min(100, Math.round((idleCount / totalItems) * 100)) : 0)
+const hpPercent = computed(() => totalItems.value > 0 ? Math.round((activeCount.value / totalItems.value) * 100) : 0)
+const idleCount = computed(() => totalItems.value - activeCount.value)
+const mpPercent = computed(() => totalItems.value > 0 ? Math.min(100, Math.round((idleCount.value / totalItems.value) * 100)) : 0)
 const expPercent = computed(() => {
   if (!questSummary.value) return 0
   // 当前等级内进度：每级 50，exp_to_next 为距下一级剩余

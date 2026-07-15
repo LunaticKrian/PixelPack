@@ -158,7 +158,7 @@ async function handleSave() {
             <div class="portrait-box" @click="triggerUpload">
               <img
                 v-if="portraitPreview || auth.user?.portrait_url"
-                :src="portraitPreview || auth.user?.portrait_url"
+                :src="portraitPreview || auth.user?.portrait_url || undefined"
                 alt="Portrait"
                 class="portrait-img"
               />

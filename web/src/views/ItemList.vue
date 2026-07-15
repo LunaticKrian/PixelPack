@@ -345,11 +345,6 @@ async function handleFormSubmit() {
 }
 
 // --- RPG stat helpers ---
-function catPercent(count: number): number {
-  const total = overview.value?.total_items ?? 0
-  return total > 0 ? Math.round((count / total) * 100) : 0
-}
-
 const hoveredCat = ref<number>(-1)
 const pieTooltipStyle = ref<Record<string, string>>({})
 
@@ -397,13 +392,6 @@ const pieSegments = computed(() => {
     }
   })
 })
-
-// --- Category name lookup ---
-function getCategoryName(categoryId: number | null): string {
-  if (!categoryId) return ''
-  const cat = categories.value.find(c => c.id === categoryId)
-  return cat ? cat.name : ''
-}
 
 // --- Fetch items ---
 async function fetchItems() {
@@ -481,10 +469,6 @@ function goEditItem() {
     closeDetailModal()
     openEditModal(id)
   }
-}
-
-function goToAddItem() {
-  router.push('/items/new')
 }
 
 // --- Reset page when filters change ---

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { MdEditor, MdPreview } from 'md-editor-v3'
+import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import { createBlog, updateBlog, listBlogs } from '../api/journals'
 import type { Blog } from '../types/journal'
