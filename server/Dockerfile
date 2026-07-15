@@ -14,13 +14,19 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    # 国内构建加速：pip 走清华源
+    PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
+    PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
 
 WORKDIR /app
 
-# ca-certificates: 访问 GLM HTTPS 端点必需
-# git: claude-agent-sdk 运行时可能读取仓库上下文
-RUN apt-get update \
+# 国内构建加速：apt 换阿里云源。
+# 注意 trixie(Debian 13) 用 DEB822 格式 sources.list.d/debian.sources，
+# 老版用 sources.list，两种都兼容。海外构建可删掉这两行。
+RUN { sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null \
+      || sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list 2>/dev/null; } \
+ && apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates git \
  && rm -rf /var/lib/apt/lists/*
 
