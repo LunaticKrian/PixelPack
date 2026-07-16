@@ -34,6 +34,9 @@ services:
     container_name: pixelpack-web
     restart: unless-stopped
     ports:
-      - "80:80"
+      # 服务器已有网关 nginx(airc-nginx) 占用 80/443，这里用空闲端口对外，
+      # 再由 airc-nginx 反代到此端口。端口可通过环境变量覆盖：
+      #   PIXELPACK_PORT=9090 docker compose up -d
+      - "${PIXELPACK_PORT:-8088}:80"
     depends_on:
       - api
