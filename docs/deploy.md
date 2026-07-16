@@ -119,6 +119,11 @@ docker compose up -d --build
   （已修复历史 bug）。若仍异常，检查 `./data/uploads` 是否有写入权限。
 - **每日资讯 / 对话生成不工作**：大概率是捆绑二进制平台不匹配，见第 5 节；
   或 `.env` 里 `ANTHROPIC_AUTH_TOKEN` 未填 / 失效。
+- **AI 功能报 `--dangerously-skip-permissions cannot be used with root/sudo`**：
+  `claude-agent-sdk` 以 `bypassPermissions` 模式跑 claude 子进程，该模式拒绝 root。
+  后端镜像已内置非 root 用户 `app`(UID 1000)。**前提是宿主机的 `./data` 必须
+  `chown -R 1000:1000 data`**（bind mount 会覆盖镜像内属主，否则 app 写不进库/上传目录）。
+  改完后 `docker compose up -d --build api` 重建。
 - **改端口**：编辑 `docker-compose.yml` 中 `web.ports`，如 `"8080:80"`。
 - **上 HTTPS / 域名**：在 `web` 之前再加一层反代（nginx/traefik + Let's Encrypt），
   或直接给 web 容器加证书。当前配置仅 HTTP，适合已有外层网关或内网场景。
