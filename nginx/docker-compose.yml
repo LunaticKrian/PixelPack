@@ -22,6 +22,12 @@ services:
       - /opt/pixelpack/web/dist:/var/www/pixelpack:ro
       # PixelPack 上传文件（api 写、网关只读直发）
       - /opt/pixelpack/data/uploads:/var/www/pixelpack-uploads:ro
+    # nginx 运行期要写 pid(/run/nginx.pid) 和 temp/缓存(/var/cache/nginx)。
+    # CentOS 7 老 kernel(3.10) + 新 nginx:alpine 的 overlayfs 对这两个目录的
+    # 写入会报 pwrite() EPERM，挂 tmpfs 规避。
+    tmpfs:
+      - /run
+      - /var/cache/nginx
     networks:
       - airise-web
 

@@ -54,7 +54,7 @@ chmod 600 server/.env
 ```
 
 - **DNS**：主机记录 `pixelpack` / 类型 `A` / 记录值=服务器公网 IP（拼成 `pixelpack.airise.site`）。
-- **证书**：通配 `*.airise.site`（DNS-01 签发），`/etc/letsencrypt/live/airise.site/`。
+- **证书**：通配 `*.airise.site`（DNS-01 签发），`/etc/letsencrypt/live/airise.site/`。签发与续期步骤见 [`technology/260719-通配证书签发.md`](technology/260719-通配证书签发.md)。
 - **网关目录**：`nginx/` 同步到 `/opt/nginx`（部署网关时用，见 §3）。
 
 ---
