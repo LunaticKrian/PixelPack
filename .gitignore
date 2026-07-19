@@ -20,3 +20,5 @@ server/uploads/
 # Env
 .env
 .env.local
+
+.DS_store

@@ -89,6 +89,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/transfer',
+      name: 'transfer',
+      component: () => import('../views/Transfer.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/character/create',
       name: 'character-create',
       component: () => import('../views/CharacterCreation.vue'),

@@ -29,7 +29,7 @@ from app.models import (  # noqa: F401 – ensure tables are created
     UserAchievement,
     item_tags,
 )
-from app.routers import auth, categories, chat, intel, items, journals, quests, stats, tags, tasks
+from app.routers import auth, categories, chat, intel, items, journals, quests, rtc, stats, tags, tasks
 from app.utils.migrate import ensure_column
 
 
@@ -101,6 +101,7 @@ app.include_router(journals.router)
 app.include_router(intel.router)
 app.include_router(tasks.router)
 app.include_router(chat.router)
+app.include_router(rtc.router)
 
 # ── Static Files ───────────────────────────────────────────────────────
 # 修正：原代码 getattr(settings, 'upload_dir', ...) 用了小写属性名，

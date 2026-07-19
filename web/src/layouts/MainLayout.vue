@@ -9,6 +9,7 @@ const navItems = [
   { path: '/', label: '角色信息', icon: '◈' },
   { path: '/quests', label: '委托大厅', icon: '▣' },
   { path: '/chat', label: 'AI 对话', icon: '◉' },
+  { path: '/transfer', label: '传输', icon: '⇄' },
   { path: '/260711-world-map', label: '世界地图', icon: '❖' },
 ]
 
