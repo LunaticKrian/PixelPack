@@ -4,6 +4,22 @@ PS：更新记录以日期倒排更新
 
 ## 2026年07月19日
 
+### 部署：前端容器化（多阶段构建）+ 网关拆分独立仓库
+
+把前端从「宿主机 `npm run build` → 产物挂载进网关直发」改为 **Docker 多阶段构建**，并把网关从本仓库 `nginx/` 拆分为独立项目 `airise-gateway`。
+
+- **前端容器**（`web/`）
+  - 新增 `web/Dockerfile`：两阶段 `node:24-alpine`（`npm ci` + `vue-tsc` + `vite build`）→ `nginx:alpine` serve `dist`。
+  - 新增 `web/nginx.conf`（镜像自带）：SPA history 回退 + gzip + `/assets` 长缓存。
+  - 新增 `web/.dockerignore`。
+  - 根 `docker-compose.yml` 新增 `web` 服务（`pixelpack-web`），接入 `airise-web`，不暴露端口；生产环境不再依赖宿主机 node。
+- **网关拆分**（`airise-gateway` 独立仓库）
+  - `PixelPack/nginx/` 整体迁出为独立项目 `airise-gateway`，本仓库不再保留。
+  - 站点 conf（`pixelpack` / `model.airise.site`）：`location /` 由 `root` 直发改为 `proxy_pass http://pixelpack-web`；`/api`、`/uploads`、WS 仍由网关单层处理不变。
+  - 网关 compose 移除 `/opt/pixelpack/web/dist` 挂载（SPA 改由 web 容器提供），保留 uploads / 证书挂载。
+- **架构定调**：前端 web 容器是**纯静态叶子**（只 `try_files` + gzip + 缓存），不碰 `/api`、`/uploads`、WS —— 与初版「内层 nginx 啥都管」的双重 nginx 踩坑结构有本质区别。详见 [`technology/260719-nginx部署架构.md`](technology/260719-nginx部署架构.md) §3「前端 SPA 的两种交付方式」、§10「历史变更」。
+- **文档同步**：README、`docs/deployment/deploy.md`、`bootstrap-deploy.sh` / `deploy-dns.sh`（`GW_DIR` 改 `/opt/airise-gateway`、前端改容器构建）、`260719-nginx部署架构.md`、`260719-新服务上线与网关扩展.md`、`260719-通配证书签发.md` 全部更新为现行部署。
+
 ### 部署：网关托管模式上线 + 部署链路打通
 
 把 PixelPack 从「内层 nginx + 外层网关」双层结构，切换为统一的 **airise-gateway 网关托管模式**（架构见 [`technology/260719-nginx部署架构.md`](technology/260719-nginx部署架构.md)）。完整部署流程见 [`deploy.md`](deploy.md)；新项目接入见 [`technology/260719-新服务上线与网关扩展.md`](technology/260719-新服务上线与网关扩展.md)。本次上线修掉三个阻塞部署的线上问题：

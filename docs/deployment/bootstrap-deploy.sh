@@ -1,15 +1,14 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────
-#  PixelPack 一键部署（新环境）：网络 → 前端 → 后端 → 证书 → 网关
+#  PixelPack 一键部署（新环境）：网络 → 后端+前端容器 → 证书 → 网关
 #
 #  它做的事：
-#    1. 装齐 docker / compose / node（缺才装），起 crond
-#    2. 克隆代码、建共享网络 airise-web、建数据目录并 chown 1000
+#    1. 装齐 docker / compose（缺才装），起 crond
+#    2. 克隆 PixelPack + airise-gateway、建共享网络 airise-web、建数据目录并 chown 1000
 #    3. 检查 / 生成 server/.env（密钥要你填）
-#    4. 构建前端 → web/dist
-#    5. 起后端容器 pixelpack-api
-#    6. 调 deploy-dns.sh：签 *.airise.site 通配证书 + 起网关 airise-gateway
-#    7. 端到端验证
+#    4. 起后端 + 前端容器（pixelpack-api + pixelpack-web，web 镜像内构建 SPA）
+#    5. 调 deploy-dns.sh：签 *.airise.site 通配证书 + 起网关 airise-gateway
+#    6. 端到端验证
 #
 #  它不做的事（必须你先在 DNSPod 控制台做好）：
 #    - 建 A 记录：<SITE_DOMAIN> → 本机公网 IP（且已生效）
@@ -18,23 +17,24 @@
 #  用法（root）：
 #    bash bootstrap-deploy.sh
 #    # 或覆盖默认值：
-#    PROJECT_DIR=/opt/pixelpack SITE_DOMAIN=pixelpack.airise.site \
+#    PROJECT_DIR=/opt/pixelpack GW_DIR=/opt/airise-gateway \
+#    SITE_DOMAIN=pixelpack.airise.site \
 #    BASE_DOMAIN=airise.site EMAIL=you@x.com \
 #    DNSPOD_INI=/root/.secrets/dnspod.ini bash bootstrap-deploy.sh
 #
-#  关联：docs/deploy.md · docs/technology/260719-通配证书签发.md
+#  关联：docs/deployment/deploy.md · docs/technology/260719-通配证书签发.md
 # ─────────────────────────────────────────────────────────────
 set -e
 
 # ── 参数（环境变量覆盖）──────────────────────────────────────
 PROJECT_DIR="${PROJECT_DIR:-/opt/pixelpack}"
 REPO_URL="${REPO_URL:-https://github.com/LunaticKrian/PixelPack.git}"
+GW_DIR="${GW_DIR:-/opt/airise-gateway}"
+GW_REPO_URL="${GW_REPO_URL:-https://github.com/LunaticKrian/airise-gateway.git}"
 BASE_DOMAIN="${BASE_DOMAIN:-airise.site}"
 SITE_DOMAIN="${SITE_DOMAIN:-pixelpack.airise.site}"
 EMAIL="${EMAIL:-2793260947@qq.com}"
 DNSPOD_INI="${DNSPOD_INI:-/root/.secrets/dnspod.ini}"
-GW_DIR="$PROJECT_DIR/nginx"
-SKIP_FRONTEND="${SKIP_FRONTEND:-0}"
 
 log()  { echo -e "\033[1;34m▶ $*\033[0m"; }
 ok()   { echo -e "\033[1;32m✅ $*\033[0m"; }
@@ -73,11 +73,19 @@ ok "docker $(docker version --format '{{.Server.Version}}') + compose 就绪"
 
 # ── 2. 代码 / 网络 / 数据目录 ─────────────────────────────────
 if [ ! -d "$PROJECT_DIR/.git" ]; then
-  log "克隆代码到 $PROJECT_DIR"
+  log "克隆 PixelPack 到 $PROJECT_DIR"
   git clone "$REPO_URL" "$PROJECT_DIR"
 else
-  log "代码已存在，git pull"
+  log "PixelPack 代码已存在，git pull"
   git -C "$PROJECT_DIR" pull --ff-only || warn "git pull 失败，继续用现有代码"
+fi
+
+if [ ! -d "$GW_DIR/.git" ]; then
+  log "克隆网关 airise-gateway 到 $GW_DIR"
+  git clone "$GW_REPO_URL" "$GW_DIR"
+else
+  log "网关代码已存在，git pull"
+  git -C "$GW_DIR" pull --ff-only || warn "git pull 失败，继续用现有代码"
 fi
 
 log "建共享网络 airise-web"
@@ -87,9 +95,10 @@ log "建数据目录并 chown 1000（非 root api 容器用户）"
 mkdir -p "$PROJECT_DIR/data/uploads"
 chown -R 1000:1000 "$PROJECT_DIR/data"
 
-# 网关 compose 默认挂载 /opt/pixelpack/...，按实际 PROJECT_DIR 改写，保证路径一致
+# 网关 compose 默认挂载 /opt/pixelpack/data/uploads（前端 dist 已不再挂载），
+# 按实际 PROJECT_DIR 改写，保证上传目录路径一致。
 if [ "$PROJECT_DIR" != "/opt/pixelpack" ]; then
-  log "按 $PROJECT_DIR 调整网关 compose 挂载路径"
+  log "按 $PROJECT_DIR 调整网关 compose 上传目录挂载路径"
   sed -i "s|/opt/pixelpack|$PROJECT_DIR|g" "$GW_DIR/docker-compose.yml"
 fi
 
@@ -108,39 +117,25 @@ else
     || warn "$ENV_FILE 缺 ANTHROPIC_AUTH_TOKEN，AI 功能会失败"
 fi
 
-# ── 4. 构建前端 ──────────────────────────────────────────────
-if [ "$SKIP_FRONTEND" != "1" ]; then
-  if ! command -v npm >/dev/null; then
-    log "安装 Node.js 20 LTS（NodeSource）"
-    curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
-    yum install -y nodejs
-  fi
-  log "构建前端 → web/dist（网关直发）"
-  cd "$PROJECT_DIR/web"
-  npm install
-  npm run build
-  ok "前端构建完成"
-else
-  warn "SKIP_FRONTEND=1，跳过前端构建（确保 $PROJECT_DIR/web/dist 已存在）"
-fi
-
-# ── 5. 起后端 ────────────────────────────────────────────────
-log "部署后端 pixelpack-api"
+# ── 4. 起后端 + 前端容器 ─────────────────────────────────────
+# 前端不再在宿主机 npm 构建：web/Dockerfile 多阶段镜像内完成（node 构建→nginx serve）。
+log "部署 pixelpack-api + pixelpack-web（web 镜像内构建 SPA）"
 cd "$PROJECT_DIR"
 docker compose up -d --build
-ok "后端已启动"
+ok "api + web 已启动"
 
-# ── 6. 签证书 + 起网关（deploy-dns.sh 内：先签证书再 up 网关，避开证书-网关鸡生蛋）──
+# ── 5. 签证书 + 起网关（deploy-dns.sh 内：先签证书再 up 网关，避开证书-网关鸡生蛋）──
 log "签发通配证书 + 启动网关 airise-gateway"
 export EMAIL BASE_DOMAIN DNSPOD_INI GW_DIR
 bash "$PROJECT_DIR/docs/deployment/deploy-dns.sh"
 
-# ── 7. 验证 ──────────────────────────────────────────────────
+# ── 6. 验证 ──────────────────────────────────────────────────
 log "端到端验证"
 docker compose -f "$GW_DIR/docker-compose.yml" ps
 docker exec airise-gateway nginx -t
 echo
 ok "部署完成。访问 https://$SITE_DOMAIN 验证"
 echo "  - 后端日志：cd $PROJECT_DIR && docker compose logs -f api"
+echo "  - 前端日志：cd $PROJECT_DIR && docker compose logs -f web"
 echo "  - 网关日志：cd $GW_DIR && docker compose logs -f nginx"
 echo "  - 证书续期：acme.sh cron 已注册（systemctl status crond）"

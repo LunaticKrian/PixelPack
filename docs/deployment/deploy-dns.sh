@@ -17,7 +17,7 @@ BASE_DOMAIN="${BASE_DOMAIN:-airise.site}"
 DOMAINS=(-d "$BASE_DOMAIN" -d "*.$BASE_DOMAIN")
 CRED_FILE="${CRED_FILE:-/root/.secrets/dnspod.ini}"   # 含 dns_dnspod_api_token = ID,TOKEN
 CERT_DIR="/etc/letsencrypt/live/$BASE_DOMAIN"
-GW_DIR="${GW_DIR:-/root/pixel-pack/nginx}"            # 网关 compose 目录，按实际改
+GW_DIR="${GW_DIR:-/opt/airise-gateway}"               # 网关 compose 目录（独立项目），按实际改
 
 # ── 0. 前置检查 + 解析 DNSPod 凭证 ────────────────────────────
 [ "$(id -u)" -eq 0 ] || { echo "请用 root 运行"; exit 1; }
