@@ -49,7 +49,10 @@ fi
 "$ACME" --set-default-ca --server letsencrypt
 
 # ── 2. 签发通配证书（DNSPod DNS-01）───────────────────────────
-"$ACME" --issue --dns dns_dp "${DOMAINS[@]}"
+# acme.sh 在「证书已签发、未到续期」时会跳过并返回非零；用 || true 放过该状态，
+# 让脚本继续走 --install-cert（幂等）和起网关。真正签发失败时，下一步 install-cert
+# 会因找不到证书而报错退出，不会静默通过。
+"$ACME" --issue --dns dns_dp "${DOMAINS[@]}" || true
 
 # ── 3. 装到网关期望路径 + 续期自动 reload ─────────────────────
 mkdir -p "$CERT_DIR"
