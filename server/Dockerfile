@@ -69,4 +69,8 @@ EXPOSE 8000
 
 # 在 /app 下启动，使 "./data.db"、"uploads" 等相对路径解析到 /app。
 # DATABASE_URL / UPLOAD_DIR 由 compose 注入，指向 /app/data 以实现持久化。
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# --log-config 给 uvicorn 自身日志（启动/退出/访问日志）加时间戳，
+# 默认 LOGGING_CONFIG 只有 levelprefix+message 无时间。业务 app.* 日志的时间戳
+# 见 app/logging_config.py。两者日期格式已对齐。
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", \
+     "--log-config", "app/uvicorn_log_config.json"]

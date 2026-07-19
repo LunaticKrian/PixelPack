@@ -2,6 +2,16 @@
 
 PS：更新记录以日期倒排更新
 
+## 2026年07月19日
+
+### 部署：网关托管模式上线 + 部署链路打通
+
+把 PixelPack 从「内层 nginx + 外层网关」双层结构，切换为统一的 **airise-gateway 网关托管模式**（架构见 [`technology/260719-nginx部署架构.md`](technology/260719-nginx部署架构.md)）。完整部署流程见 [`deploy.md`](deploy.md)；新项目接入见 [`technology/260719-新服务上线与网关扩展.md`](technology/260719-新服务上线与网关扩展.md)。本次上线修掉三个阻塞部署的线上问题：
+
+- **claude 子进程 root 下拒绝启动**：`server/Dockerfile` 新增 `ENV IS_SANDBOX=1`（claude 官方沙箱旁路开关），容器以任意用户运行都能兜底 `bypassPermissions` 的 root 校验。
+- **网关无限重启 `host not found in upstream "<project>-api"`**：模板文件 `nginx/conf.d/_template.conf`（含字面占位符）被构建期烤进镜像被 nginx 加载。`nginx/.dockerignore` 增加排除项，模板不再进镜像。
+- **SQLite 启动报 `attempt to write a readonly database`**：宿主机 `./data` 属主非 1000。部署前 `chown -R 1000:1000 data`（部署文档 §3）。
+
 ## 2026年07月12日
 
 ### 重构：每日任务系统 V1.0（手动自定义 + AI 自然语言生成）

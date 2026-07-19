@@ -8,7 +8,8 @@ import logging
 import os
 
 _FMT = "%(asctime)s %(levelname)-7s %(name)s | %(message)s"
-_DATEFMT = "%H:%M:%S"
+# 与 uvicorn_log_config.json 的 datefmt 对齐，全链路日志时间格式一致
+_DATEFMT = "%Y-%m-%d %H:%M:%S"
 
 
 def setup_logging() -> None:
