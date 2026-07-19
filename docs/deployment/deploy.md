@@ -174,7 +174,7 @@ tar czf pixelpack-data-$(date +%F).tar.gz data/
 - **`response from daemon: network airise-web not found`**：首次部署没建网，`docker network create airise-web`。
 - **启动报 `attempt to write a readonly database`**：`data` 属主非 1000，`chown -R 1000:1000 data` 后重启 api。
 - **AI 报 `--dangerously-skip-permissions cannot be used with root`**：镜像缺 `IS_SANDBOX=1`，确认跑的是最新 `--build` 的镜像（`docker compose exec api sh -c 'echo $IS_SANDBOX'` 应为 `1`）。
-- **网关无限重启 `host not found in upstream "<project>-api"`**：模板 `_template.conf` 混进镜像（确认 `nginx/.dockerignore` 已排除），或后端容器名 / 网络名拼错（确认 `pixelpack-api` 在 `airise-web`）。
+- **网关无限重启 `host not found in upstream "<project>-api"`**：`conf.d/` 里有带占位符的模板被当 `.conf` 加载（模板须为 `_template.example`，非 `.conf`），或后端容器名 / 网络名拼错（确认 `pixelpack-api` 在 `airise-web`）。
 - **每日资讯 / 对话生成不工作**：多为捆绑二进制平台不匹配（见 §7）或 `.env` token 失效。
 - **图片上传后 404**：网关 `/uploads/` alias 未指向 `data/uploads`，或该目录属主非 1000。
 - **`/api/rtc/signal` 卡 pending**：网关该 location 未关 `proxy_buffering` 或缺 WS 升级头。

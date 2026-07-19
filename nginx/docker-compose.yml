@@ -1,33 +1,40 @@
-# ── airise 统一网关（独立容器，不与 ripro/airc-nginx 共用）──────────────
-# 自包含：站点配置在构建期 COPY 进镜像（见 Dockerfile），运行期只挂载
-# 会变的数据。部署前先把 PixelPack 数据放到 /opt/pixelpack。
+# ── airise 统一网关（独立容器，卷挂载模式）──────────────────────────
+# 直接用官方 nginx:alpine，conf.d / snippets / 证书 / 静态产物全部卷挂载，
+# 改 conf 后 `nginx -s reload` 即生效，无需 rebuild 镜像。
 # 详见 docs/technology/260719-nginx部署架构.md
 #
 # ⚠️ 本容器独占宿主机 80/443。删除旧 airc-nginx 前，ripro 站点需先迁入
-#    本网关（照抄 conf.d/_template.conf 新建一个站点文件）。
+#    本网关（照抄 conf.d/_template.example 新建一个站点 .conf）。
+#
+# ⚠️ conf.d/ 里只能放真正的 *.conf；模板 _template.example 不是 .conf，
+#    nginx 不会加载，避免占位符 <project>-api 被解析导致启动崩溃。
 
 services:
   nginx:
-    build: .
-    image: airise-gateway
+    image: nginx:alpine
     container_name: airise-gateway
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      # TLS 证书（certbot 续期后容器立即可见，但需 nginx -s reload 生效）
+      # 站点配置 + 复用片段（ro 挂载；改完 nginx -s reload 生效）
+      - ./conf.d:/etc/nginx/conf.d:ro
+      - ./snippets:/etc/nginx/snippets:ro
+      # TLS 证书（续期后 nginx -s reload 生效）
       - /etc/letsencrypt:/etc/letsencrypt:ro
       # PixelPack SPA 构建产物（网关直发）
       - /opt/pixelpack/web/dist:/var/www/pixelpack:ro
       # PixelPack 上传文件（api 写、网关只读直发）
       - /opt/pixelpack/data/uploads:/var/www/pixelpack-uploads:ro
-    # nginx 运行期要写 pid(/run/nginx.pid) 和 temp/缓存(/var/cache/nginx)。
-    # CentOS 7 老 kernel(3.10) + 新 nginx:alpine 的 overlayfs 对这两个目录的
-    # 写入会报 pwrite() EPERM，挂 tmpfs 规避。
+    # nginx 运行期要写 pid(/run/nginx.pid) 与 temp/缓存(/var/cache/nginx)。
     tmpfs:
       - /run
       - /var/cache/nginx
+    # CentOS 7 老 kernel(3.10) 上 Docker 默认 seccomp 可能拦截 nginx 写 pid 的
+    # pwrite 系统调用（报 pwrite() /run/nginx.pid EPERM）。若不报错可删掉此项。
+    security_opt:
+      - seccomp:unconfined
     networks:
       - airise-web
 
