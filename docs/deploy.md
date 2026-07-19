@@ -1,129 +1,122 @@
-# PixelPack Docker 部署指南
+# PixelPack 部署指南（网关托管模式）
 
-两个独立容器：`api`（FastAPI/uvicorn 后端）+ `web`（nginx 前端 + 反代）。
-数据与上传文件通过 `./data` 目录挂载持久化，密钥通过 `.env` 注入。
+PixelPack 接入统一的 `airc-nginx` 网关：
+- **前端 SPA** 与 **上传文件**由网关直接 serve（宿主机路径，只读挂载）。
+- **后端 api**（FastAPI/uvicorn）以裸容器跑，接入共享网络 `airise-web`，网关按容器名反代。
+- 不再有内层 nginx；HTTPS/WSS 在网关统一终结。
+
+> 完整架构与多项目接入说明见 [`docs/technology/260719-nginx部署架构.md`](technology/260719-nginx部署架构.md)。
 
 ---
 
-## 1. 服务器准备
+## 0. 前置（网关侧，一次性）
 
-需要安装 **Docker + Docker Compose**（建议 Docker 24+，compose v2 插件）。
+确保已执行（详见架构文档 §7）：
+
+- `docker network create airise-web`
+- airc-nginx 已加入 `airise-web` 网络，并挂载了 PixelPack 的 dist 与 uploads（只读）。
+- `/opt/nginx/conf.d/pixelpack.airise.site.conf` 已就位。
+- DNS：`pixelpack.airise.site` → 服务器 IP；证书已签发。
+
+## 1. 拉取代码
 
 ```bash
-# Ubuntu/Debian 示例
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER   # 重新登录生效
-```
-
-克隆代码：
-
-```bash
-git clone https://github.com/LunaticKrian/PixelPack.git
-cd PixelPack
+git clone https://github.com/LunaticKrian/PixelPack.git /opt/pixelpack
+cd /opt/pixelpack
 ```
 
 ## 2. 配置密钥（.env）
 
-`.env` **不进 git、不进镜像**，仅在服务器本地创建，由 compose 运行时注入。
+`.env` **不进 git、不进镜像**，仅服务器本地创建，由 compose 运行时注入。
 
 ```bash
 cp server/.env.example server/.env
 vi server/.env     # 填入真实的 ANTHROPIC_AUTH_TOKEN
+chmod 600 server/.env
 ```
 
-> `DATABASE_URL` 与 `UPLOAD_DIR` 已在 `docker-compose.yml` 中固定指向持久化卷
-> `/app/data`，`.env` 里无需也不应填写这两项。
+> `DATABASE_URL` 与 `UPLOAD_DIR` 已在 `docker-compose.yml` 中固定指向 `/app/data`，`.env` 无需填。
 
-## 3. 关于密钥安全的说明
+## 3. 数据目录权限
 
-你问到的「手动上传 .env 到磁盘，还是更安全的方式」：
+后端镜像以非 root 用户 `app`(UID 1000) 运行，`./data` 必须归 1000：
 
-- **当前方案（env_file 指向本地 .env）已经是个人/小团队项目的最佳平衡**——密钥
-  不进镜像（重建镜像不泄露）、不进 git、不进版本历史。镜像可以放心 push 到任何
-  公开仓库。
-- 更进一步的可选项：
-  - **文件权限收紧**：`chmod 600 server/.env`，并确保只有部署用户可读。
-  - **Docker secrets**（挂到 `/run/secrets`，进程内只读、权限更严）：单机 VPS 收益
-    有限，配置更繁琐，一般不必。
-  - **云密钥服务**（AWS Secrets Manager / Vault）：需要额外基础设施，对个人项目过度。
-- ⚠️ 注意：当前仓库的 `.env` 已被 `.gitignore` 排除，token 不会进 git。但请确认
-  历史 commit 里没有泄露过——一旦提交过，应**轮换（regenerate）该 GLM token**。
+```bash
+mkdir -p data
+chown -R 1000:1000 data
+```
 
-## 4. 构建并启动
+## 4. 启动后端
 
 ```bash
 docker compose up -d --build
 ```
 
-首次构建后端较慢（`claude-agent-sdk` 会下载一个约 240MB 的捆绑二进制）。
-
-查看状态与日志：
+首次构建较慢（`claude-agent-sdk` 会下载约 240MB 的捆绑二进制）。
 
 ```bash
-docker compose ps
-docker compose logs -f api     # 后端日志
-docker compose logs -f web     # nginx 日志
+docker compose logs -f api     # 查看后端日志
 ```
 
-访问 `http://<服务器IP>` 即可。
+## 5. 构建前端到宿主机（网关直发）
 
-## 5. ⚠️ 重要：捆绑二进制的平台一致性
+前端由网关从 `/opt/pixelpack/web/dist` 直发，所以要在宿主机上构建：
 
-`claude-agent-sdk` 在 `_bundled/claude` 里捆绑了一个**平台相关的原生二进制**。
-**构建时的平台必须等于运行时的平台**，否则后端 Agent（每日资讯 / 对话生成任务）
-会启动失败，报 "Claude Code not found" 或 exec format error。
-
-- **服务器是 x86_64（绝大多数云主机）**：直接在服务器上 `docker compose build`
-  即可，pip 会拉到 amd64 版二进制。
-- **你在 Apple Silicon (arm64) Mac 上构建、推到 amd64 服务器**：必须显式指定
-  目标平台走 QEMU 模拟（较慢，但能拉到正确二进制）：
-
-  ```bash
-  docker buildx build --platform linux/amd64 -t pixelpack-api --load ./server
-  docker buildx build --platform linux/amd64 -t pixelpack-web --load ./web
-  docker compose up -d
-  ```
-
-  最省心的做法仍是**直接在服务器上构建**。
-
-## 6. 数据备份 / 迁移
-
-所有有状态数据都在仓库下的 `./data`：
-
-```
-./data/
-├── data.db        # SQLite 数据库
-└── uploads/       # 用户上传的图片 / 头像
+```bash
+cd web
+npm install        # 首次
+npm run build      # 产物 → web/dist
 ```
 
-备份：
+更新前端只需重新 `npm run build`，网关立即生效（只读挂载实时反映）。
+
+## 6. 访问
+
+```
+https://pixelpack.airise.site
+```
+
+---
+
+## 7. ⚠️ 捆绑二进制的平台一致性
+
+`claude-agent-sdk` 捆绑了平台相关的原生二进制，**构建平台必须等于运行平台**：
+
+- 服务器是 x86_64：直接在服务器上 `docker compose build` 即可。
+- 在 Apple Silicon 构建、跑在 amd64 服务器：用
+  `docker buildx build --platform linux/amd64 -t pixelpack-api --load ./server`，
+  然后 `docker compose up -d`。最省心仍是直接在服务器上构建。
+
+## 8. 数据备份 / 迁移
+
+```
+/opt/pixelpack/data/
+├── data.db        # SQLite
+└── uploads/       # 上传文件 / 头像
+```
 
 ```bash
 tar czf pixelpack-data-$(date +%F).tar.gz data/
 ```
 
-迁移到新机器：拷贝 `data/` 与 `server/.env` 即可。
+迁移到新机器：拷贝 `data/` 与 `server/.env`。
 
-## 7. 更新代码
+## 9. 更新代码
 
 ```bash
 git pull
-docker compose up -d --build
+docker compose up -d --build       # 后端
+cd web && npm run build            # 前端
 ```
 
-`./data` 不受影响，数据不丢。
+`./data` 不受影响。
 
-## 8. 常见问题
+## 10. 常见问题
 
-- **图片上传后 404 / 显示不出**：确认 `main.py` 中 `UPLOAD_DIR = settings.UPLOAD_DIR`
-  （已修复历史 bug）。若仍异常，检查 `./data/uploads` 是否有写入权限。
-- **每日资讯 / 对话生成不工作**：大概率是捆绑二进制平台不匹配，见第 5 节；
-  或 `.env` 里 `ANTHROPIC_AUTH_TOKEN` 未填 / 失效。
-- **AI 功能报 `--dangerously-skip-permissions cannot be used with root/sudo`**：
-  `claude-agent-sdk` 以 `bypassPermissions` 模式跑 claude 子进程，该模式拒绝 root。
-  后端镜像已内置非 root 用户 `app`(UID 1000)。**前提是宿主机的 `./data` 必须
-  `chown -R 1000:1000 data`**（bind mount 会覆盖镜像内属主，否则 app 写不进库/上传目录）。
-  改完后 `docker compose up -d --build api` 重建。
-- **改端口**：编辑 `docker-compose.yml` 中 `web.ports`，如 `"8080:80"`。
-- **上 HTTPS / 域名**：在 `web` 之前再加一层反代（nginx/traefik + Let's Encrypt），
-  或直接给 web 容器加证书。当前配置仅 HTTP，适合已有外层网关或内网场景。
+- **图片上传后 404**：检查网关 `pixelpack.airise.site.conf` 的 `/uploads/` alias 是否指向
+  `/opt/pixelpack/data/uploads`，以及该目录属主是否为 1000（api 需写入）。
+- **`/api/rtc/signal` 信令卡 pending**：网关该 location 必须含
+  `proxy_set_header Upgrade / Connection "upgrade"` 且 `proxy_buffering off`。
+- **AI 功能报 `--dangerously-skip-permissions cannot be used with root`**：
+  后端已内置非 root 用户；前提是 `./data` 已 `chown -R 1000:1000`。
+- **每日资讯 / 对话生成不工作**：多为捆绑二进制平台不匹配（见 §7）或 `.env` token 失效。

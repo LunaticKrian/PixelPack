@@ -1,14 +1,11 @@
-# ── PixelPack 部署编排 ────────────────────────────────────────────────
-# 两个独立服务：
-#   api  —— FastAPI/uvicorn 后端（含 APScheduler 定时任务 + claude-agent-sdk）
-#   web  —— nginx 提供前端 dist，并反代 /api、/uploads 到 api
+# ── PixelPack 部署编排（网关托管模式）─────────────────────────────────
+# 架构：前端 SPA 与上传文件由统一的 airc-nginx 网关直接 serve，
+#       本 compose 只跑后端 api，并接入共享网络 airise-web 供网关按容器名反代。
+#       详见 docs/technology/260719-nginx部署架构.md
 #
-# 持久化：./data 目录整体挂载到容器 /app/data，data.db 与 uploads/ 都落在这里，
-#         容器重建/升级不丢数据，备份只需拷贝 ./data。
+# 前端构建：在服务器上 `cd web && npm run build`，产物 web/dist 由网关挂载直发。
 #
 # 密钥：./server/.env 由 env_file 注入（不进镜像、不进 git）。
-#       DATABASE_URL / UPLOAD_DIR 在下面 environment 里固定指向持久化卷，
-#       即使 .env 里误写也会被覆盖。
 
 services:
   api:
@@ -21,22 +18,14 @@ services:
     environment:
       # 持久化到挂载卷，避免容器重建丢库 / 丢文件
       DATABASE_URL: "sqlite+aiosqlite:////app/data/data.db"
+      # 写入 /app/data/uploads；网关以只读方式挂载同一路径直接 serve
       UPLOAD_DIR: "/app/data/uploads"
     volumes:
       - ./data:/app/data
-    expose:
-      - "8000"
-    # 不直接对主机暴露 8000；外部一律经 web 容器的 nginx 访问
+    networks:
+      - airise-web
+    # 不对主机暴露端口；外部一律经 airc-nginx 网关访问
 
-  web:
-    build: ./web
-    image: pixelpack-web
-    container_name: pixelpack-web
-    restart: unless-stopped
-    ports:
-      # 服务器已有网关 nginx(airc-nginx) 占用 80/443，这里用空闲端口对外，
-      # 再由 airc-nginx 反代到此端口。端口可通过环境变量覆盖：
-      #   PIXELPACK_PORT=9090 docker compose up -d
-      - "${PIXELPACK_PORT:-8088}:80"
-    depends_on:
-      - api
+networks:
+  airise-web:
+    external: true
