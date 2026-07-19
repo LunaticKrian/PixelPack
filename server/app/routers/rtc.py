@@ -115,6 +115,8 @@ async def signal(ws: WebSocket) -> None:
                 if target:
                     await target["ws"].send_json({
                         "type": "answer",
+                        "from": uid,
+                        "username": user.username,
                         "answer": msg.get("answer"),
                     })
                 else:

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-state="linked">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PixelPack · 传送阵 / P2P Transfer</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 环境：CRT 扫描线 + 网格 + 尘埃 -->
+  <div class="ambient">
+    <div class="ambient__grid"></div>
+    <div class="ambient__dust"></div>
+  </div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <main class="app">
+    <!-- 顶部眉头 -->
+    <header class="page-head">
+      <div class="eyebrow">
+        <span class="eyebrow__dot"></span>
+        TRANSMISSION // PEER-TO-PEER GATE
+      </div>
+      <h1 class="page-title">传送阵</h1>
+      <p class="page-sub">在两位冒险者之间建立直连通道，文件不经过任何中转。</p>
+    </header>
+
+    <!-- 英雄：传送门光束 -->
+    <section class="gate" aria-label="connection state">
+      <!-- 左：你 -->
+      <div class="pillar pillar--me">
+        <div class="pillar__cap"></div>
+        <div class="pillar__body"></div>
+        <div class="pillar__label">
+          <span class="pillar__who">YOU</span>
+          <span class="pillar__name">krian</span>
+          <span class="pillar__state"><i class="dot dot--ok"></i> 在线</span>
+        </div>
+      </div>
+
+      <!-- 中：能量束 -->
+      <div class="beam-wrap">
+        <div class="beam">
+          <div class="beam__track"></div>
+          <div class="beam__flow"></div>
+          <div class="beam__sprite" aria-hidden="true">▤</div>
+        </div>
+        <div class="channel-tag">
+          <span class="channel-tag__key">CHANNEL</span>
+          <span class="channel-tag__val" id="channelVal">LINKED</span>
+        </div>
+      </div>
+
+      <!-- 右：对端 -->
+      <div class="pillar pillar--peer">
+        <div class="pillar__cap"></div>
+        <div class="pillar__body"></div>
+        <div class="pillar__label">
+          <span class="pillar__who">PEER</span>
+          <span class="pillar__name" id="peerName">alice</span>
+          <span class="pillar__state" id="peerState"><i class="dot dot--ok"></i> 已连接</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 下方：控制台 + 名册 -->
+    <div class="deck">
+      <!-- 左：控制台 -->
+      <section class="panel panel--console">
+        <div class="panel__head">
+          <h2 class="panel__title">控制台</h2>
+          <span class="panel__hint" id="statusHint">通道就绪，可以投放货物</span>
+        </div>
+
+        <!-- 频道码：发起 / 加入 -->
+        <div class="freq">
+          <div class="freq__col">
+            <span class="freq__label">发起频道</span>
+            <button class="btn btn--primary">生成频道码</button>
+            <div class="code-slot code-slot--out">
+              <span class="code-slot__caption">频道码</span>
+              <span class="code">AB7K2X</span>
+              <button class="copy">复制</button>
+            </div>
+          </div>
+
+          <div class="freq__sep">或</div>
+
+          <div class="freq__col">
+            <span class="freq__label">加入频道</span>
+            <div class="join">
+              <input class="join__input" maxlength="6" placeholder="输入码" value="AB7K2X" />
+              <button class="btn">加入</button>
+            </div>
+            <span class="freq__note">输入对方的 6 位频道码即视为同意接收</span>
+          </div>
+        </div>
+
+        <hr class="pixel-divider" />
+
+        <!-- 货物：文件选择 + 进度 -->
+        <div class="cargo">
+          <label class="dropzone">
+            <input type="file" />
+            <span class="dropzone__icon">▤</span>
+            <span class="dropzone__text">
+              <strong>tactical-map.png</strong>
+              <em>4.31 MB · 已就位</em>
+            </span>
+            <span class="dropzone__action">更换</span>
+          </label>
+
+          <div class="progress">
+            <div class="progress__bar"><div class="progress__fill" id="progFill" style="width:63%"></div></div>
+            <div class="progress__meta">
+              <span class="progress__pct" id="progPct">63%</span>
+              <span class="progress__rate" id="progRate">2.8 MB/s · 1.6 MB / 4.3 MB</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn--primary btn--lg" id="sendBtn">投放货物</button>
+            <button class="btn btn--danger" id="discBtn">切断通道</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右：在线冒险者名册 -->
+      <aside class="panel panel--roster">
+        <div class="panel__head">
+          <h2 class="panel__title">在线冒险者</h2>
+          <span class="panel__count">3</span>
+        </div>
+        <ul class="roster">
+          <li class="roster__item roster__item--active">
+            <i class="dot dot--ok"></i>
+            <span class="roster__name">alice</span>
+            <span class="roster__tag">连线中</span>
+          </li>
+          <li class="roster__item">
+            <i class="dot dot--ok"></i>
+            <span class="roster__name">bob</span>
+            <button class="btn btn--xs">召唤</button>
+          </li>
+          <li class="roster__item">
+            <i class="dot dot--ok"></i>
+            <span class="roster__name">carol</span>
+            <button class="btn btn--xs">召唤</button>
+          </li>
+        </ul>
+        <div class="roster__empty" hidden>
+          附近没有其他冒险者。<br />邀请一位伙伴上线吧。
+        </div>
+      </aside>
+    </div>
+
+    <!-- 设计稿预览：状态切换（实现时删除） -->
+    <div class="dev-switch" role="group" aria-label="preview state">
+      <span class="dev-switch__label">预览状态</span>
+      <button data-s="idle">待机</button>
+      <button data-s="waiting">等待</button>
+      <button data-s="linked" class="is-active">已连接</button>
+      <button data-s="transfer">传输中</button>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
