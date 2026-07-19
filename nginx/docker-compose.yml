@@ -1,0 +1,30 @@
+# ── airise 统一网关（独立容器，不与 ripro/airc-nginx 共用）──────────────
+# 自包含：站点配置在构建期 COPY 进镜像（见 Dockerfile），运行期只挂载
+# 会变的数据。部署前先把 PixelPack 数据放到 /opt/pixelpack。
+# 详见 docs/technology/260719-nginx部署架构.md
+#
+# ⚠️ 本容器独占宿主机 80/443。删除旧 airc-nginx 前，ripro 站点需先迁入
+#    本网关（照抄 conf.d/_template.conf 新建一个站点文件）。
+
+services:
+  nginx:
+    build: .
+    image: airise-gateway
+    container_name: airise-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # TLS 证书（certbot 续期后容器立即可见，但需 nginx -s reload 生效）
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # PixelPack SPA 构建产物（网关直发）
+      - /opt/pixelpack/web/dist:/var/www/pixelpack:ro
+      # PixelPack 上传文件（api 写、网关只读直发）
+      - /opt/pixelpack/data/uploads:/var/www/pixelpack-uploads:ro
+    networks:
+      - airise-web
+
+networks:
+  airise-web:
+    external: true
