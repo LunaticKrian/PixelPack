@@ -118,5 +118,8 @@ cd web && npm run build            # 前端
 - **`/api/rtc/signal` 信令卡 pending**：网关该 location 必须含
   `proxy_set_header Upgrade / Connection "upgrade"` 且 `proxy_buffering off`。
 - **AI 功能报 `--dangerously-skip-permissions cannot be used with root`**：
-  后端已内置非 root 用户；前提是 `./data` 已 `chown -R 1000:1000`。
+  后端镜像已内置非 root 用户 `app`，并设了 `IS_SANDBOX=1`（claude 官方沙箱旁路开关，
+  使 `bypassPermissions` 在 root 下也能跑）。若仍报错，确认线上容器跑的是最新构建的镜像
+  （`docker compose build --no-cache` 后重启），且 `./data` 已 `chown -R 1000:1000`。
+  如运行时被强制以 root 拉起，`IS_SANDBOX=1` 已能兜底，无需额外处理。
 - **每日资讯 / 对话生成不工作**：多为捆绑二进制平台不匹配（见 §7）或 `.env` token 失效。

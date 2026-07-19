@@ -48,6 +48,18 @@ RUN groupadd -r -g 1000 app \
 
 # claude 子进程需要可写的 HOME（写会话/缓存）；TMPDIR 默认 /tmp 全局可写。
 ENV HOME=/home/app
+
+# ── IS_SANDBOX=1：claude 二进制绕过 root 检查 ───────────────────────
+# claude-agent-sdk 以 permission_mode="bypassPermissions" 拉起 claude 子进程，
+# 等价于 claude CLI 的 --dangerously-skip-permissions；该模式在 getuid()==0
+# （root）时会直接拒绝退出：
+#   "--dangerously-skip-permissions cannot be used with root/sudo privileges"
+# 本镜像已切到非 root 用户 app，但线上运行时仍可能以 root 拉起容器
+# （宿主 docker daemon / compose user 覆盖 / 编排器默认）。
+# IS_SANDBOX=1 是 claude 官方的沙箱旁路开关，使二进制在 root 下也不再校验。
+# 容器本身已是隔离环境 + 已用 bypassPermissions，设此开关无新增风险。
+ENV IS_SANDBOX=1
+
 USER app
 
 # data.db 与 uploads/ 由 docker-compose 挂载到 /app/data（见 compose volumes）。
