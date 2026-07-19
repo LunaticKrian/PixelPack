@@ -37,6 +37,11 @@ services:
     # 不对主机暴露端口；外部一律经 airc-nginx 网关访问
     # 纯静态服务，运行期不依赖 api，故不加 depends_on
     #
+    # 上传文件预览：api 写入 ./data/uploads，本容器只读直发。
+    # 与 api 同属一个 compose、同用 ./data 相对路径 → 宿主绝对路径必然一致，不会漂移。
+    volumes:
+      - ./data/uploads:/app/data/uploads:ro
+    #
     # nginx 运行期要写 pid(/run/nginx.pid) 与 temp/缓存(/var/cache/nginx)。
     # CentOS 7 老 kernel(3.10) 上 Docker 默认 seccomp 会拦截 nginx 写 pid 的
     # pwrite 系统调用（报 pwrite() /run/nginx.pid EPERM）。tmpfs 给可写路径，

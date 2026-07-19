@@ -4,6 +4,17 @@ PS：更新记录以日期倒排更新
 
 ## 2026年07月19日
 
+### 部署：/uploads 改由 web 容器直发，网关瘦身成纯路由器
+
+把 `/uploads` 从「网关挂载宿主路径直发」改为「web 容器直发」，消除跨 compose 的路径漂移。
+
+- **根因**：网关（`airise-gateway` 独立 compose）直发 `/uploads` 时，硬编码宿主绝对路径 `/opt/pixelpack/data/uploads`；而 api（PixelPack compose）用相对 `./data`。两个 compose 各自解析，换部署目录即漂移，线上踩过图片 404（PixelPack 实际跑在 `/root/pixel-pack`）。
+- **改法**：`/uploads` 交给 `pixelpack-web` 容器直发 —— `web/nginx.conf` 加 `location /uploads/ { alias /app/data/uploads/; }`，web 容器挂 `./data/uploads:ro`。api 写、web 读**同属一个 compose、同用 `./data`** → 宿主绝对路径必然一致，**零漂移**。
+- **网关瘦身**：站点 conf 去掉 `location /uploads/`（随 `location /` 转发给 web）；网关 compose 移除 uploads 挂载，**只挂 conf/snippets/证书**，不挂任何项目路径。网关彻底成为纯路由器（`/api`→api、其余→web，只认容器名）。
+- **约束不变**：web 容器仍是纯静态叶子（SPA + `/uploads` 直发），不碰 `/api`、WS（那些由网关单层直连 api）。`/uploads` 经 web 但纯静态，不涉 WS/SSE 参数，不违反约束。
+- **文档同步**：deploy.md、nginx部署架构.md（§3 目标架构/交付方式、§6 落地、§9 清单、§10 历史变更）、新服务上线与网关扩展.md、README、airise-gateway README 全部更新。
+- 详见 [`technology/260719-nginx部署架构.md`](technology/260719-nginx部署架构.md) §3「交付方式 B」、§10「历史变更」。
+
 ### 部署：前端容器化（多阶段构建）+ 网关拆分独立仓库
 
 把前端从「宿主机 `npm run build` → 产物挂载进网关直发」改为 **Docker 多阶段构建**，并把网关从本仓库 `nginx/` 拆分为独立项目 `airise-gateway`。

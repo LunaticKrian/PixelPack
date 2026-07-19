@@ -1,10 +1,10 @@
 # PixelPack 部署指南（网关托管模式）
 
 PixelPack 接入统一的 `airise-gateway` 网关：
-- **前端 SPA** 由本项目的 `web` 容器提供（多阶段镜像：`node` 构建 → `nginx` 静态服务，纯静态叶子），网关 `location /` 反代到 `pixelpack-web`。
-- **上传文件** 由网关直接 serve（宿主机路径，只读挂载）。
+- **前端 SPA + 上传文件预览** 都由本项目的 `web` 容器提供（多阶段镜像：`node` 构建 → `nginx` 静态服务，纯静态叶子）。网关 `location /` 反代到 `pixelpack-web`（`/uploads` 也走这条）。
 - **后端 api**（FastAPI/uvicorn）以裸容器跑，接入共享网络 `airise-web`，网关 `location /api/` 按容器名反代。
-- HTTPS/WSS 在网关统一终结；`/api`、`/uploads`、WS 信令仍由网关单层处理（不进 web 容器）。
+- HTTPS/WSS 在网关统一终结；`/api`、WS 信令由网关单层直连 api（不进 web 容器）。
+- **网关是纯路由器**：只认容器名（`pixelpack-api` / `pixelpack-web`），不挂任何项目宿主路径，因此换部署目录也不会路径漂移。上传文件由 `api` 写入 `./data/uploads`、`web` 只读挂载同一目录直发 —— 二者同属一个 compose，宿主路径天然一致。
 
 > 架构与多项目接入说明见 [`technology/260719-nginx部署架构.md`](../technology/260719-nginx部署架构.md)；新项目接入流程见 [`technology/260719-新服务上线与网关扩展.md`](../technology/260719-新服务上线与网关扩展.md)；本次上线修复见 [`updatelog.md`](../updatelog.md) 2026-07-19。
 
@@ -21,7 +21,7 @@ PixelPack 接入统一的 `airise-gateway` 网关：
 §1 部署后端 + 前端容器（pixelpack-api + pixelpack-web，接入 airise-web）
    │   ← 网关依赖容器名 pixelpack-api / pixelpack-web 已在网络内
    ▼
-§2 部署/更新网关 airise-gateway（独立项目，挂载上传 + 证书，反代到 web 容器）
+§2 部署/更新网关 airise-gateway（独立项目，纯路由：挂载 conf/证书，反代到 api/web）
    │
    ▼
 §3 端到端验证
@@ -37,7 +37,7 @@ PixelPack 接入统一的 `airise-gateway` 网关：
 # 1) 共享网络：api/web 容器与网关都接入，按容器名互通（external，须事先建）
 docker network create airise-web
 
-# 2) 项目目录与权限（前端 dist 不再需要放到宿主机，由容器构建）
+# 2) 项目目录与权限（前端 dist 不再需要放到宿主机；uploads 由 api 写、web 读）
 mkdir -p /opt/pixelpack/data/uploads
 chown -R 1000:1000 /opt/pixelpack/data      # 非 root api 容器用户(UID 1000)须能写
 
@@ -59,7 +59,7 @@ chmod 600 server/.env
 
 ## §1 部署后端 + 前端容器
 
-根 `docker-compose.yml` 同时定义 `api`（FastAPI/uvicorn）与 `web`（多阶段 nginx 静态）两个服务，均接入 `airise-web`，都不对主机暴露端口，外部一律经网关反代。
+根 `docker-compose.yml` 同时定义 `api`（FastAPI/uvicorn）与 `web`（多阶段 nginx 静态）两个服务，均接入 `airise-web`，都不对主机暴露端口，外部一律经网关反代。`api` 写 `./data/uploads`，`web` 只读挂载同一目录直发 `/uploads`。
 
 ```bash
 cd /opt/pixelpack
@@ -82,7 +82,7 @@ docker compose logs -f web       # 前端容器（nginx）应正常监听 80
 
 ## §2 部署 / 更新网关 airise-gateway
 
-网关是**独立项目/独立仓库**（`/opt/airise-gateway`），用官方 `nginx:alpine` + 卷挂载 conf.d/snippets/证书/上传，改 conf 后 `nginx -s reload` 即生效。
+网关是**独立项目/独立仓库**（`/opt/airise-gateway`），用官方 `nginx:alpine` + 卷挂载 conf.d/snippets/证书。**网关不挂任何项目宿主路径**（SPA、`/uploads` 全部由 `web` 容器提供），只按容器名反代。改 conf 后 `nginx -s reload` 即生效。
 
 ```bash
 cd /opt/airise-gateway       # 独立仓库，git pull 或 rsync 同步
@@ -94,11 +94,12 @@ curl -I https://pixelpack.airise.site   # 需 §1 的 pixelpack-web 已在 airis
 docker compose logs -f nginx
 ```
 
-`/opt/airise-gateway/docker-compose.yml` 只读挂载两项运行期数据：
+`/opt/airise-gateway/docker-compose.yml` 只读挂载：
+- `./conf.d` → 站点配置（reload 生效）
+- `./snippets` → 复用片段
 - `/etc/letsencrypt` → 证书
-- `/opt/pixelpack/data/uploads` → `/var/www/pixelpack-uploads`（上传直发）
 
-> 前端 SPA 不再由网关挂载直发 —— 网关 `location /` 反代到 `pixelpack-web` 容器（见 `conf.d/pixelpack.airise.site.conf`）。
+> 网关是纯路由器：`location /api/` → `pixelpack-api`，`location /`（含 `/uploads`）→ `pixelpack-web`。换 PixelPack 部署目录，网关一个字都不用改。
 
 ---
 
@@ -109,7 +110,7 @@ docker compose logs -f nginx
 | 前端可访问 | 浏览器开 `https://pixelpack.airise.site`，能进登录页 |
 | API 通 | 登录、拉物品列表正常 |
 | WS 信令 | `/api/rtc/signal` 不卡 pending（网关该 location 须 `proxy_buffering off` + WS 升级头，已在 `snippets/proxy.conf`） |
-| 上传图片 | 物品图片上传后能预览（`/uploads/` alias 指向 `data/uploads`，目录属主 1000） |
+| 上传图片 | 物品图片上传后能预览（api 写 `./data/uploads`，web 只读挂载直发 `/uploads/`；目录属主 1000） |
 | AI 功能 | 世界地图「发起侦测」、任务页 AI 对话不报 root 错误 |
 
 ---
@@ -164,5 +165,5 @@ tar czf pixelpack-data-$(date +%F).tar.gz data/
 - **网关无限重启 `host not found in upstream "pixelpack-web"` / `"pixelpack-api"`**：相应容器没接入 `airise-web`、容器名拼错，或 `airise-web` 没建。也可能是 airise-gateway 的 `conf.d/` 里有带占位符的模板被当 `.conf` 加载（模板须为 `_template.example`，非 `.conf`）。
 - **首页 502 / 连不上前端**：`pixelpack-web` 容器未起或不在 `airise-web`（网关按容器名 `pixelpack-web` 反代）。`docker compose ps web` + `docker network inspect airise-web`。
 - **每日资讯 / 对话生成不工作**：多为捆绑二进制平台不匹配（见 §6）或 `.env` token 失效。
-- **图片上传后 404**：网关 `/uploads/` alias 未指向 `data/uploads`，或该目录属主非 1000。
+- **图片上传后 404**：`/uploads` 现由 `web` 容器直发（`web/nginx.conf` 的 `location /uploads/` alias 指向 `/app/data/uploads`，web 容器挂载 `./data/uploads:ro`）。排查：① `docker exec pixelpack-web ls /app/data/uploads/` 能否看到文件；② `docker inspect pixelpack-api --format '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}'` 看 api 的 `./data` 实际宿主路径，确认 web 挂的是同一目录下的 `uploads`（同属一个 compose，正常必一致）；③ `data/uploads` 属主非 1000 导致 api 写入失败（不是 404 而是上传接口报错）。
 - **`/api/rtc/signal` 卡 pending**：网关该 location 未关 `proxy_buffering` 或缺 WS 升级头。
