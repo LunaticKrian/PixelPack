@@ -1,6 +1,7 @@
 # ── airise 统一网关（独立容器，卷挂载模式）──────────────────────────
-# 直接用官方 nginx:alpine，conf.d / snippets / 证书 / 静态产物全部卷挂载，
+# 直接用官方 nginx:alpine，conf.d / snippets / 证书 / 上传文件全部卷挂载，
 # 改 conf 后 `nginx -s reload` 即生效，无需 rebuild 镜像。
+# 前端 SPA 已迁入独立 web 容器，由本网关 location / 反代（不再挂载 dist）。
 # 详见 docs/technology/260719-nginx部署架构.md
 #
 # ⚠️ 本容器独占宿主机 80/443。删除旧 airc-nginx 前，ripro 站点需先迁入
@@ -23,8 +24,6 @@ services:
       - ./snippets:/etc/nginx/snippets:ro
       # TLS 证书（续期后 nginx -s reload 生效）
       - /etc/letsencrypt:/etc/letsencrypt:ro
-      # PixelPack SPA 构建产物（网关直发）
-      - /opt/pixelpack/web/dist:/var/www/pixelpack:ro
       # PixelPack 上传文件（api 写、网关只读直发）
       - /opt/pixelpack/data/uploads:/var/www/pixelpack-uploads:ro
     # nginx 运行期要写 pid(/run/nginx.pid) 与 temp/缓存(/var/cache/nginx)。

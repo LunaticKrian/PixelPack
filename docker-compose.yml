@@ -1,9 +1,10 @@
 # ── PixelPack 部署编排（网关托管模式）─────────────────────────────────
-# 架构：前端 SPA 与上传文件由统一的 airc-nginx 网关直接 serve，
-#       本 compose 只跑后端 api，并接入共享网络 airise-web 供网关按容器名反代。
+# 架构：前端 SPA 由 web 服务（多阶段镜像：node 构建 → nginx serve）提供，
+#       网关 airc-nginx 反代 location / 到 web 容器；/api、/uploads 由网关直发。
+#       上传文件仍由网关从宿主机路径只读直发。
 #       详见 docs/technology/260719-nginx部署架构.md
 #
-# 前端构建：在服务器上 `cd web && npm run build`，产物 web/dist 由网关挂载直发。
+# 前端构建：随 `docker compose up -d --build web` 完成，无需宿主机 node 环境。
 #
 # 密钥：./server/.env 由 env_file 注入（不进镜像、不进 git）。
 
@@ -25,6 +26,16 @@ services:
     networks:
       - airise-web
     # 不对主机暴露端口；外部一律经 airc-nginx 网关访问
+
+  web:
+    build: ./web
+    image: pixelpack-web
+    container_name: pixelpack-web
+    restart: unless-stopped
+    networks:
+      - airise-web
+    # 不对主机暴露端口；外部一律经 airc-nginx 网关访问
+    # 纯静态服务，运行期不依赖 api，故不加 depends_on
 
 networks:
   airise-web:
