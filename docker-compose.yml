@@ -36,6 +36,17 @@ services:
       - airise-web
     # 不对主机暴露端口；外部一律经 airc-nginx 网关访问
     # 纯静态服务，运行期不依赖 api，故不加 depends_on
+    #
+    # nginx 运行期要写 pid(/run/nginx.pid) 与 temp/缓存(/var/cache/nginx)。
+    # CentOS 7 老 kernel(3.10) 上 Docker 默认 seccomp 会拦截 nginx 写 pid 的
+    # pwrite 系统调用（报 pwrite() /run/nginx.pid EPERM）。tmpfs 给可写路径，
+    # seccomp:unconfined 放行 pwrite。与 airise-gateway 同一套配置。
+    # 若不报错可删掉这两项。
+    tmpfs:
+      - /run
+      - /var/cache/nginx
+    security_opt:
+      - seccomp:unconfined
 
 networks:
   airise-web:
